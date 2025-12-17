@@ -21,6 +21,12 @@ const SampleReducer = createSlice({
     setMessage: (state, action) => {
       state.message = action.payload;
     },
+    clearMessage: (state) => {
+      state.message = initialState.message;
+      state.status = initialState.status;
+      state.loaded = initialState.loaded;
+      state.error = undefined;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -41,5 +47,5 @@ const SampleReducer = createSlice({
   },
 });
 
-export const { setMessage } = SampleReducer.actions;
+export const { setMessage, clearMessage } = SampleReducer.actions;
 export default SampleReducer;

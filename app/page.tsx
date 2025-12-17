@@ -36,7 +36,7 @@ const TipsPage = () => {
           className="md:col-span-2 lg:col-span-1"
         >
           <ComponentStructureVisual />
-          <div className="mt-4 space-y-2 px-2 text-sm text-zinc-600 dark:text-zinc-400">
+          <div className="mt-2 space-y-1.5 px-1 text-xs text-zinc-600 sm:mt-4 sm:space-y-2 sm:px-2 sm:text-sm dark:text-zinc-400">
             <p>
               <strong>Don&apos;t Repeat Yourself (DRY):</strong> If you see a pattern repeating,
               abstract it into a reusable component.
@@ -74,10 +74,12 @@ const TipsPage = () => {
           description="Pay attention to component names and their context. If a component is named 'ListUsers', its implementation should focus on that."
           icon={<Type size={20} />}
         >
-          <div className="space-y-4 rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900">
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-zinc-500 uppercase">Bad Practice</span>
-              <code className="block rounded bg-red-50 p-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div className="space-y-3 rounded-lg bg-zinc-100 p-3 sm:space-y-4 sm:p-4 dark:bg-zinc-900">
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              <span className="text-[10px] font-semibold text-zinc-500 uppercase sm:text-xs">
+                Bad Practice
+              </span>
+              <code className="block rounded bg-red-50 p-1.5 text-[10px] text-red-600 sm:p-2 sm:text-sm dark:bg-red-900/20 dark:text-red-400">
                 const ListUsers = () =&gt; &#123;
                 <br />
                 &nbsp;&nbsp;// sending emails logic...
@@ -89,9 +91,11 @@ const TipsPage = () => {
                 &#125;
               </code>
             </div>
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-semibold text-zinc-500 uppercase">Good Practice</span>
-              <code className="block rounded bg-green-50 p-2 text-sm text-green-600 dark:bg-green-900/20 dark:text-green-400">
+            <div className="flex flex-col gap-1.5 sm:gap-2">
+              <span className="text-[10px] font-semibold text-zinc-500 uppercase sm:text-xs">
+                Good Practice
+              </span>
+              <code className="block rounded bg-green-50 p-1.5 text-[10px] text-green-600 sm:p-2 sm:text-sm dark:bg-green-900/20 dark:text-green-400">
                 const ListUsers = () =&gt; &#123;
                 <br />
                 &nbsp;&nbsp;// only listing logic
@@ -101,7 +105,7 @@ const TipsPage = () => {
                 &#125;
               </code>
             </div>
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+            <p className="text-xs text-zinc-600 sm:text-sm dark:text-zinc-400">
               Observe each function and JSX return. If unrelated logic creeps in, move it out.
             </p>
           </div>
@@ -113,19 +117,19 @@ const TipsPage = () => {
           description="Use React Hooks and modern patterns to keep the application fluid and performant."
           icon={<Zap size={20} />}
         >
-          <ul className="space-y-3 p-2">
-            <li className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+          <ul className="space-y-2 p-1.5 sm:space-y-3 sm:p-2">
+            <li className="flex items-start gap-1.5 text-xs text-zinc-700 sm:gap-2 sm:text-sm dark:text-zinc-300">
               <span className="font-bold text-green-500">✓</span>
               <span>
                 Use <code>useMemo</code> and <code>useCallback</code> for expensive calculations or
                 reference stability.
               </span>
             </li>
-            <li className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <li className="flex items-start gap-1.5 text-xs text-zinc-700 sm:gap-2 sm:text-sm dark:text-zinc-300">
               <span className="font-bold text-green-500">✓</span>
               <span>Prefer composition over deep prop drilling.</span>
             </li>
-            <li className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+            <li className="flex items-start gap-1.5 text-xs text-zinc-700 sm:gap-2 sm:text-sm dark:text-zinc-300">
               <span className="font-bold text-green-500">✓</span>
               <span>
                 Keep effects (<code>useEffect</code>) simple and focused.
@@ -141,23 +145,23 @@ const TipsPage = () => {
           icon={<Settings size={20} />}
           className="md:col-span-2"
         >
-          <div className="space-y-4 rounded-lg bg-zinc-100 p-4 dark:bg-zinc-900">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="space-y-3 rounded-lg bg-zinc-100 p-3 sm:space-y-4 sm:p-4 dark:bg-zinc-900">
+            <div className="space-y-2 sm:space-y-3">
+              <p className="text-xs font-medium text-zinc-700 sm:text-sm dark:text-zinc-300">
                 After cloning and installing dependencies, prepare your project:
               </p>
-              <div className="rounded-md bg-zinc-50 p-3 dark:bg-zinc-800">
-                <code className="block text-sm text-zinc-800 dark:text-zinc-200">
+              <div className="rounded-md bg-zinc-50 p-2 sm:p-3 dark:bg-zinc-800">
+                <code className="block text-xs text-zinc-800 sm:text-sm dark:text-zinc-200">
                   npm run prepare:production
                   <br />
                   npm install
                 </code>
               </div>
-              <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <div className="space-y-1.5 text-xs text-zinc-600 sm:space-y-2 sm:text-sm dark:text-zinc-400">
                 <p>
                   <strong>This will:</strong>
                 </p>
-                <ul className="ml-2 list-inside list-disc space-y-1">
+                <ul className="ml-2 list-inside list-disc space-y-0.5 sm:space-y-1">
                   <li>
                     Add example files to <code>.gitignore</code>
                   </li>
@@ -170,10 +174,10 @@ const TipsPage = () => {
                   </li>
                 </ul>
               </div>
-              <div className="border-t border-zinc-200 pt-2 dark:border-zinc-700">
-                <p className="text-xs text-zinc-500 dark:text-zinc-500">
+              <div className="border-t border-zinc-200 pt-1.5 sm:pt-2 dark:border-zinc-700">
+                <p className="text-[10px] text-zinc-500 sm:text-xs dark:text-zinc-500">
                   💡 To restore examples:{' '}
-                  <code className="text-xs">npm run prepare:development</code>
+                  <code className="text-[10px] sm:text-xs">npm run prepare:development</code>
                 </p>
               </div>
             </div>

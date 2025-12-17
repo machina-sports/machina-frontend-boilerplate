@@ -7,11 +7,11 @@ export function ClientServerVisual() {
   const [isClient, setIsClient] = useState(false);
 
   return (
-    <div className="flex flex-col items-center gap-6 p-4">
-      <div className="flex items-center gap-4 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-800">
+    <div className="flex flex-col items-center gap-4 p-2 sm:gap-6 sm:p-4">
+      <div className="flex w-full items-center gap-2 rounded-lg bg-zinc-100 p-1 sm:w-auto sm:gap-4 dark:bg-zinc-800">
         <button
           onClick={() => setIsClient(false)}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
+          className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
             !isClient
               ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50'
               : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50'
@@ -21,7 +21,7 @@ export function ClientServerVisual() {
         </button>
         <button
           onClick={() => setIsClient(true)}
-          className={`rounded-md px-4 py-2 text-sm font-medium transition-all ${
+          className={`flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-all sm:flex-none sm:px-4 sm:py-2 sm:text-sm ${
             isClient
               ? 'bg-white text-zinc-900 shadow-sm dark:bg-zinc-950 dark:text-zinc-50'
               : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50'
@@ -31,10 +31,10 @@ export function ClientServerVisual() {
         </button>
       </div>
 
-      <div className="group relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-lg border border-zinc-200 bg-white p-6 shadow-xl transition-all duration-500 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="group relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-lg border border-zinc-200 bg-white p-4 shadow-xl transition-all duration-500 sm:p-6 dark:border-zinc-800 dark:bg-zinc-900">
         {/* 'use client' Directive Animation */}
         <div
-          className={`absolute top-4 left-6 transform rounded border border-yellow-200 bg-yellow-100 px-3 py-1 font-mono text-xs text-yellow-700 transition-all duration-500 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 ${isClient ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}
+          className={`absolute top-3 left-4 transform rounded border border-yellow-200 bg-yellow-100 px-2 py-0.5 font-mono text-[10px] text-yellow-700 transition-all duration-500 sm:top-4 sm:left-6 sm:px-3 sm:py-1 sm:text-xs dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 ${isClient ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'}`}
         >
           &apos;use client&apos;;
         </div>
@@ -83,7 +83,7 @@ export function ClientServerVisual() {
 
 function FeatureItem({ icon, text }: { icon: ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-2 text-xs text-zinc-700 dark:text-zinc-300">
+    <div className="flex items-center gap-1.5 text-[10px] text-zinc-700 sm:gap-2 sm:text-xs dark:text-zinc-300">
       <span className="text-zinc-400">{icon}</span>
       {text}
     </div>
