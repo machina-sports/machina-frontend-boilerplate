@@ -49,11 +49,11 @@ export function ChatControls() {
       <Button
         variant="default"
         onClick={handleNewChat}
-        className="mr-4 h-9 w-auto"
+        className="mr-2 h-9 w-9 px-0 md:mr-4 md:w-auto md:px-4"
         title="New Chat"
       >
         <Plus className="h-4 w-4" />
-        <span className="text-sm font-medium">New Chat</span>
+        <span className="hidden text-sm font-medium md:ml-2 md:inline">New Chat</span>
       </Button>
 
       {/* Theme Selector */}
@@ -83,41 +83,45 @@ export function ChatControls() {
       </DropdownMenu>
 
       {/* Layout Selector */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            title="Change layout"
-          >
-            {layoutIcons[layout]}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Layout</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => dispatch(setLayout('standard'))}>
-            <LayoutGrid className="mr-2 h-4 w-4" />
-            Standard
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => dispatch(setLayout('wide'))}>
-            <LayoutList className="mr-2 h-4 w-4" />
-            Wide
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="hidden md:block">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              title="Change layout"
+            >
+              {layoutIcons[layout]}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Layout</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => dispatch(setLayout('standard'))}>
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Standard
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => dispatch(setLayout('wide'))}>
+              <LayoutList className="mr-2 h-4 w-4" />
+              Wide
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
       {/* Fullscreen Toggle */}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => dispatch(toggleFullscreen())}
-        className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-        title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-      >
-        {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-      </Button>
+      <div className="hidden md:block">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => dispatch(toggleFullscreen())}
+          className="h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+      </div>
     </div>
   );
 }

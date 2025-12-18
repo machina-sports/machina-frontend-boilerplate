@@ -65,7 +65,7 @@ export default function ChatPage() {
       )}
     >
       {/* Header */}
-      <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-3 backdrop-blur-md md:h-16 md:px-4 dark:border-zinc-800 dark:bg-zinc-950/80">
+      <header className="relative z-50 flex h-14 flex-shrink-0 items-center justify-between border-b border-zinc-200 bg-white/80 px-3 backdrop-blur-md md:h-16 md:px-4 dark:border-zinc-800 dark:bg-zinc-950/80">
         <div className="flex items-center gap-2 md:gap-4">
           {!isFullscreen && (
             <Link href="/">
@@ -88,7 +88,7 @@ export default function ChatPage() {
             />
             <div className="hidden h-6 w-px bg-zinc-300 md:block dark:bg-zinc-700"></div>
             <h1 className="text-base font-semibold text-zinc-900 md:text-lg dark:text-zinc-100">
-              Machina Assistant
+              Machina <span className="hidden sm:inline">Assistant</span>
             </h1>
           </div>
         </div>
