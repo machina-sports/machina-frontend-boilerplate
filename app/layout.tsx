@@ -8,9 +8,7 @@ import { generateBrandMetadata } from '@/lib/metadata';
 import './globals.css';
 
 import AssistantRuntimeProviderWrapper from '@/contexts/assistant-runtime-provider';
-import { ChatOpenProvider } from '@/contexts/chat-open-context';
 import { FloatingChatButton } from '@/components/assistant-ui/floating-chat-button';
-import { ChatModal } from '@/components/assistant-ui/chat-modal';
 import Footer from '@/components/footer';
 
 const geistSans = Geist({
@@ -41,12 +39,9 @@ export default function RootLayout({
           <BrandColors />
           <Providers>
             <AssistantRuntimeProviderWrapper>
-              <ChatOpenProvider>
-                <FloatingChatButton />
-                <ChatModal />
-                {children}
-                <Footer />
-              </ChatOpenProvider>
+              <FloatingChatButton />
+              {children}
+              <Footer />
             </AssistantRuntimeProviderWrapper>
           </Providers>
         </BrandProvider>

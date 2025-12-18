@@ -96,7 +96,40 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.8 0 0);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.7 0 0);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.4 0 0);
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.5 0 0);
+  background-clip: content-box;
+}
+
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -143,15 +176,6 @@
     margin-bottom: 0;
     margin-right: 0.5rem;
   }
-}
-
-.aui-thread-viewport {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-  /* Scrollbar personalizado com tailwind-scrollbar */
-  scrollbar-width: thin;
-  scrollbar-color: rgb(209 213 219) transparent; /* gray-300 */
 }
 
 .dark .aui-thread-viewport {

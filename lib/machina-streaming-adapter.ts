@@ -56,16 +56,25 @@ export const createMachinaStreamingAdapter = (
           timestamp: new Date().toISOString(),
         };
 
+        const threadIdToSend =
+          config.threadId &&
+          ((config.threadId.length === 24 && /^[0-9a-fA-F]{24}$/.test(config.threadId)) ||
+            (config.threadId.length === 36 && /^[0-9a-fA-F-]{36}$/.test(config.threadId)))
+            ? config.threadId
+            : '';
+
+        console.log('[MachinaStreamAdapter] 📤 Sending request:', {
+          hasThreadId: !!config.threadId,
+          threadId: config.threadId,
+          threadIdToSend,
+          messageCount: messages.length,
+        });
+
         const requestBody: Record<string, unknown> = {
           'context-agent': {
             messages: [userMessage],
             status_message: 'Processing your request...',
-            thread_id:
-              config.threadId &&
-              ((config.threadId.length === 24 && /^[0-9a-fA-F]{24}$/.test(config.threadId)) ||
-                (config.threadId.length === 36 && /^[0-9a-fA-F-]{36}$/.test(config.threadId)))
-                ? config.threadId
-                : '',
+            thread_id: threadIdToSend,
           },
           messages: [userMessage],
           skip_delay: true,
@@ -100,6 +109,7 @@ export const createMachinaStreamingAdapter = (
         let fullText = '';
         let buffer = '';
         let threadId: string | null = config.threadId || null;
+        let suggestions: string[] = [];
 
         try {
           while (true) {
@@ -121,14 +131,39 @@ export const createMachinaStreamingAdapter = (
               try {
                 const chunk = JSON.parse(line);
                 const contentStr = safeContentToString(chunk.content);
-                console.log('[MachinaStreamAdapter] Received chunk:', {
-                  type: chunk.type,
-                  hasContent: !!chunk.content,
-                  contentPreview: contentStr ? contentStr.substring(0, 50) : null,
-                  contentType: Array.isArray(chunk.content) ? 'array' : typeof chunk.content,
-                  hasMetadata: !!chunk.metadata,
-                  metadataKeys: chunk.metadata ? Object.keys(chunk.metadata) : [],
-                });
+
+                // Capture suggestions if present in any chunk
+                if (chunk.metadata?.suggestions) {
+                  suggestions = chunk.metadata.suggestions;
+                } else if (chunk.metadata?.last_response?.suggestions) {
+                  suggestions = chunk.metadata.last_response.suggestions;
+                }
+
+                // Capture threadId if present in any chunk
+                if (!threadId) {
+                  threadId =
+                    chunk.metadata?.thread_id || chunk.metadata?.document_id || chunk.metadata?._id;
+                }
+
+                // Log every chunk type
+                console.log(`[MachinaStreamAdapter] 📦 Chunk type: ${chunk.type}`);
+
+                if (
+                  chunk.type === 'content' ||
+                  chunk.type === 'text' ||
+                  chunk.type === 'done' ||
+                  chunk.type === 'start'
+                ) {
+                  console.log('[MachinaStreamAdapter] Chunk details:', {
+                    type: chunk.type,
+                    hasContent: !!chunk.content,
+                    contentPreview: contentStr ? contentStr.substring(0, 100) + '...' : null,
+                    contentLength: contentStr ? contentStr.length : 0,
+                    contentType: Array.isArray(chunk.content) ? 'array' : typeof chunk.content,
+                    hasMetadata: !!chunk.metadata,
+                    metadataKeys: chunk.metadata ? Object.keys(chunk.metadata) : [],
+                  });
+                }
 
                 if (chunk.type === 'done' || chunk.type === 'start') {
                   console.log(
@@ -138,90 +173,133 @@ export const createMachinaStreamingAdapter = (
                 }
 
                 if (chunk.type === 'done' || chunk.type === 'complete') {
+                  console.log('[MachinaStreamAdapter] Processing done/complete chunk');
+                  console.log('[MachinaStreamAdapter] Current fullText length:', fullText.length);
+                  console.log('[MachinaStreamAdapter] Chunk metadata:', chunk.metadata);
+
                   let shouldYield = false;
                   let finalContent = '';
 
-                  if (chunk.metadata) {
+                  // Capture suggestions from metadata (already done at top level, but being explicit here)
+                  if (chunk.metadata?.suggestions) {
+                    suggestions = chunk.metadata.suggestions;
+                  } else if (chunk.metadata?.last_response?.suggestions) {
+                    suggestions = chunk.metadata.last_response.suggestions;
+                  }
+
+                  // Capture threadId from metadata if not already captured
+                  if (!threadId) {
+                    threadId =
+                      chunk.metadata?.thread_id ||
+                      chunk.metadata?.document_id ||
+                      chunk.metadata?._id;
+                  }
+
+                  // Priority 1: Check metadata.content
+                  if (chunk.metadata?.content) {
                     const metadataContent = safeContentToString(chunk.metadata.content);
-                    finalContent = metadataContent || '';
-
-                    if (finalContent) {
-                      if (!fullText || fullText !== finalContent) {
-                        fullText = finalContent;
-                        shouldYield = true;
-                      } else {
-                        console.log(
-                          '[MachinaStreamAdapter] Done metadata matches accumulated chunks'
-                        );
-                      }
-                    } else if (!fullText) {
-                      const fallbackContent =
-                        safeContentToString(chunk.metadata?.text) ||
-                        safeContentToString(chunk.metadata?.response_text) ||
-                        safeContentToString(chunk.content) ||
-                        '';
-
-                      if (fallbackContent) {
-                        console.log(
-                          '[MachinaStreamAdapter] Using fallback content, length:',
-                          fallbackContent.length
-                        );
-                        fullText = fallbackContent;
-                        shouldYield = true;
-                      }
+                    if (metadataContent) {
+                      console.log(
+                        '[MachinaStreamAdapter] Found content in metadata.content, length:',
+                        metadataContent.length
+                      );
+                      finalContent = metadataContent;
+                      fullText = metadataContent;
+                      shouldYield = true;
                     }
                   }
 
+                  // Priority 2: Use accumulated fullText if we have it
                   if (!finalContent && fullText) {
+                    console.log(
+                      '[MachinaStreamAdapter] Using accumulated fullText, length:',
+                      fullText.length
+                    );
                     finalContent = fullText;
                     shouldYield = true;
                   }
 
-                  if (shouldYield && finalContent) {
+                  // Priority 3: Try fallback fields
+                  if (!finalContent) {
+                    const fallbackContent =
+                      safeContentToString(chunk.metadata?.text) ||
+                      safeContentToString(chunk.metadata?.response_text) ||
+                      safeContentToString(chunk.content) ||
+                      '';
+
+                    if (fallbackContent) {
+                      console.log(
+                        '[MachinaStreamAdapter] Using fallback content, length:',
+                        fallbackContent.length
+                      );
+                      finalContent = fallbackContent;
+                      fullText = fallbackContent;
+                      shouldYield = true;
+                    }
+                  }
+
+                  // Yield the final content or metadata updates
+                  if ((shouldYield && finalContent) || suggestions.length > 0 || threadId) {
                     console.log(
-                      '[MachinaStreamAdapter] Yielding final content, length:',
-                      finalContent.length
+                      '[MachinaStreamAdapter] ✅ Yielding final state, content length:',
+                      finalContent.length,
+                      'suggestions:',
+                      suggestions.length
                     );
                     yield {
                       role: 'assistant' as const,
                       content: [
                         {
                           type: 'text' as const,
-                          text: finalContent,
+                          text: finalContent || fullText,
                         },
                       ],
+                      metadata: {
+                        custom: {
+                          suggestions,
+                          threadId: threadId || config.threadId,
+                        },
+                      },
                     };
-                  } else if (!finalContent) {
+                  } else {
                     console.warn(
-                      '[MachinaStreamAdapter] No content found in done chunk or accumulated text'
+                      '[MachinaStreamAdapter] ❌ No content or metadata found in done chunk'
                     );
-                    yield {
-                      role: 'assistant' as const,
-                      content: [
-                        {
-                          type: 'text' as const,
-                          text: '⚠️ Resposta processada, mas o conteúdo não está disponível. Por favor, recarregue a página.',
-                        },
-                      ],
-                    };
+                    console.warn('[MachinaStreamAdapter] fullText:', fullText);
+                    console.warn('[MachinaStreamAdapter] chunk:', JSON.stringify(chunk, null, 2));
+
+                    // Don't yield error message, just return empty
+                    // The content should have been yielded in previous chunks
+                    if (!fullText) {
+                      yield {
+                        role: 'assistant' as const,
+                        content: [
+                          {
+                            type: 'text' as const,
+                            text: '⚠️ Resposta processada, mas o conteúdo não está disponível.',
+                          },
+                        ],
+                      };
+                    }
                   }
 
                   return;
                 } else if (chunk.type === 'content' || chunk.type === 'text') {
-                  if (chunk.content) {
-                    const contentStr = safeContentToString(chunk.content);
+                  const contentStr = safeContentToString(chunk.content);
+
+                  if (contentStr) {
                     const isFinal = chunk.metadata?.final === true;
 
                     if (isFinal) {
                       console.log(
-                        '[MachinaStreamAdapter] Received FINAL content chunk, length:',
+                        '[MachinaStreamAdapter] 📝 Received FINAL content chunk, length:',
                         contentStr.length
                       );
                       fullText = contentStr;
                     } else {
                       fullText += contentStr;
                       console.log(
-                        '[MachinaStreamAdapter] Accumulated fullText length:',
+                        '[MachinaStreamAdapter] 📝 Accumulated fullText length:',
                         fullText.length
                       );
                     }
@@ -234,7 +312,15 @@ export const createMachinaStreamingAdapter = (
                           text: fullText,
                         },
                       ],
+                      metadata: {
+                        custom: {
+                          suggestions,
+                          threadId: threadId || config.threadId,
+                        },
+                      },
                     };
+                  } else {
+                    console.warn('[MachinaStreamAdapter] ⚠️ Content chunk has no content:', chunk);
                   }
                 } else if (chunk.type === 'error') {
                   const errorContent = safeContentToString(chunk.content);
@@ -250,20 +336,25 @@ export const createMachinaStreamingAdapter = (
                   const statusContent = safeContentToString(chunk.content);
                   console.log('[MachinaStreamAdapter] Status update:', statusContent);
                 } else if (chunk.type === 'start') {
-                  console.log('[MachinaStreamAdapter] Start event received');
+                  console.log('[MachinaStreamAdapter] 📡 Start event received');
 
                   if (chunk.metadata) {
                     if (chunk.metadata.thread_id) {
                       threadId = chunk.metadata.thread_id;
-                      console.log(
-                        '[MachinaStreamAdapter] Captured thread_id from start event:',
-                        threadId
-                      );
+                    } else if (chunk.metadata.document_id) {
+                      threadId = chunk.metadata.document_id;
                     } else if (chunk.metadata.task_id) {
                       threadId = chunk.metadata.task_id;
+                    }
+
+                    if (threadId) {
                       console.log(
-                        '[MachinaStreamAdapter] Captured task_id from start event (will use as thread_id if needed):',
+                        '[MachinaStreamAdapter] ✅ Captured thread_id/document_id from start event:',
                         threadId
+                      );
+                    } else {
+                      console.warn(
+                        '[MachinaStreamAdapter] ⚠️ Start event has no thread_id, document_id or task_id in metadata'
                       );
                     }
                   }
@@ -279,6 +370,12 @@ export const createMachinaStreamingAdapter = (
                           text: fullText,
                         },
                       ],
+                      metadata: {
+                        custom: {
+                          suggestions,
+                          threadId: threadId || config.threadId,
+                        },
+                      },
                     };
                   }
                 }

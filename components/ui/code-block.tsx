@@ -56,38 +56,41 @@ export function CodeBlock({ children, className }: CodeBlockProps) {
   };
 
   const theme = isDark ? dracula : oneLight;
-  const bgColor = isDark ? '#282a36' : '#fafafa';
+  const bgColor = isDark ? '#19191b' : '#fafafa';
   const borderColor = isDark ? '#44475a' : '#e5e7eb';
-  const headerBg = isDark ? '#21222c' : '#f3f4f6';
+  const headerBg = isDark ? '#19191b' : '#f3f4f6';
 
   return (
     <div
-      className="group relative my-4 overflow-hidden rounded-lg border shadow-lg dark:border-[#44475a] dark:bg-[#282a36] border-gray-200 bg-gray-50"
+      className="group relative my-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 shadow-lg dark:border-[#44475a] dark:bg-[#282a36]"
       style={{
         borderColor,
         backgroundColor: bgColor,
       }}
     >
       <div
-        className="flex items-center justify-between border-b px-4 py-2 dark:border-[#44475a] dark:bg-[#21222c] border-gray-200 bg-gray-100"
+        className="flex items-center justify-between border-b border-gray-200 bg-gray-100 px-4 py-2 dark:border-[#44475a] dark:bg-[#18181b]"
         style={{
           borderColor,
           backgroundColor: headerBg,
         }}
       >
-        <span className="font-mono text-xs tracking-wider uppercase dark:text-[#bd93f9] text-gray-600">
+        <span className="font-mono text-xs tracking-wider text-gray-600 uppercase dark:text-[#bd93f9]">
           {language}
         </span>
         <button
           onClick={handleCopy}
-          className="rounded p-1.5 transition-colors dark:text-[#6272a4] dark:hover:bg-[#44475a] dark:hover:text-[#8be9fd] text-gray-500 hover:bg-gray-200 hover:text-blue-600"
+          className="rounded p-1.5 text-gray-500 transition-colors hover:bg-gray-200 hover:text-blue-600 dark:text-[#6272a4] dark:hover:bg-[#44475a] dark:hover:text-[#8be9fd]"
           aria-label="Copy code"
         >
           {copied ? <Check size={14} /> : <Copy size={14} />}
         </button>
       </div>
 
-      <div className="overflow-x-auto dark:bg-[#282a36] bg-gray-50" style={{ backgroundColor: bgColor }}>
+      <div
+        className="overflow-x-auto bg-gray-50 dark:bg-[#282a36]"
+        style={{ backgroundColor: bgColor }}
+      >
         <SyntaxHighlighter
           language={language}
           style={theme}

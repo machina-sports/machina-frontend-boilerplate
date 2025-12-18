@@ -1,10 +1,25 @@
+'use client';
+
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAppSelector } from '@/store/useState';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const version = '0.1.0'; // You can import from package.json if needed
+  const pathname = usePathname();
+  const { theme } = useAppSelector((state) => state.chatUI);
+
+  const isChatPage = pathname === '/chat';
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'auto' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  const logoSrc = isChatPage && isDark ? '/logo-grey.svg' : '/machina-logo-dark.svg';
 
   return (
     <footer className="w-full border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -12,14 +27,19 @@ const Footer = () => {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Left Section - Branding */}
           <div className="flex flex-col gap-4">
-            <Image
-              src="/machina-logo-dark.svg"
-              alt="Machina Sports logo"
-              width={0}
-              height={0}
-              sizes="100vw"
-              className="h-8 w-auto"
-            />
+            <div className="flex items-center gap-2">
+              <Image
+                src={logoSrc}
+                alt="Machina Sports logo"
+                width={0}
+                height={0}
+                sizes="100vw"
+                className="h-8 w-auto"
+              />
+              <span className="text-xs font-light tracking-tight text-zinc-400 dark:text-zinc-500">
+                opensource
+              </span>
+            </div>
             <p className="text-sm text-zinc-600 dark:text-zinc-400">
               The Generative AI engine for Sports.
             </p>

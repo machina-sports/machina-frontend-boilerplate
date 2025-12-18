@@ -6,6 +6,7 @@ import { MessagePrimitive } from '@assistant-ui/react';
 import { memo } from 'react';
 import type { FC } from 'react';
 import AssistantActionBar from './assistant-action-bar';
+import AssistantMessageSuggestions from './assistant-message-suggestions';
 import AssistantRun from './assistant-run';
 import BranchPicker from './branch-picker';
 import MessageError from './message-error';
@@ -13,10 +14,10 @@ import MessageError from './message-error';
 const AssistantMessage: FC = () => {
   return (
     <MessagePrimitive.Root
-      className="aui-assistant-message-root fade-in slide-in-from-bottom-1 animate-in relative mx-auto w-full max-w-[var(--thread-max-width)] py-3 duration-150"
+      className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] px-2 py-2 duration-150 data-[message-status=running]:opacity-100"
       data-role="assistant"
     >
-      <div className="aui-assistant-message-content text-foreground px-2 leading-relaxed wrap-break-word">
+      <div className="aui-assistant-message-content text-foreground leading-relaxed wrap-break-word">
         <MessagePrimitive.Parts
           components={{
             Text: MarkdownText,
@@ -24,9 +25,10 @@ const AssistantMessage: FC = () => {
           }}
         />
         <MessageError />
+        <AssistantMessageSuggestions />
       </div>
 
-      <div className="aui-assistant-message-footer mt-1 ml-2 flex">
+      <div className="aui-assistant-message-footer mt-1 flex">
         <BranchPicker />
         <AssistantActionBar />
       </div>

@@ -1,10 +1,12 @@
 import { combineReducers, configureStore, type Action, type ThunkAction } from '@reduxjs/toolkit';
 import SampleReducer from '@/providers/sample/reducer';
 import AssistantReducer from '@/providers/assistant/reducer';
+import ChatUIReducer from '@/providers/chat-ui/reducer';
 
 const rootReducer = combineReducers({
   sample: SampleReducer.reducer,
   assistant: AssistantReducer.reducer,
+  chatUI: ChatUIReducer.reducer,
 });
 
 export type AppState = ReturnType<typeof rootReducer>;
