@@ -13,13 +13,15 @@ const Footer = () => {
   const { theme } = useAppSelector((state) => state.chatUI);
 
   const isChatPage = pathname === '/chat';
+  if (isChatPage) return null;
+
   const isDark =
     theme === 'dark' ||
     (theme === 'auto' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  const logoSrc = isChatPage && isDark ? '/logo-grey.svg' : '/machina-logo-dark.svg';
+  const logoSrc = isDark ? '/logo-grey.svg' : '/machina-logo-dark.svg';
 
   return (
     <footer className="w-full border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
