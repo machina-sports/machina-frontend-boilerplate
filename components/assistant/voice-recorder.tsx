@@ -75,25 +75,34 @@ export function VoiceRecorder({
       onClick={isRecording ? stopRecording : startRecording}
       disabled={disabled || isProcessing}
       className={cn(
-        'aui-voice-recorder h-[34px] min-w-[34px] rounded-full px-2 transition-all duration-300',
+        'aui-voice-recorder h-9 rounded-full transition-all duration-300 ease-in-out',
         isRecording
-          ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
+          ? 'w-24 bg-red-500/10 text-red-500 hover:bg-red-500/20 ring-1 ring-red-500/20'
           : isProcessing
-            ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-            : 'border-muted-foreground/10 hover:bg-muted-foreground/15 dark:border-muted-foreground/15 dark:hover:bg-muted-foreground/30'
+            ? 'w-32 bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20'
+            : 'w-9 border-muted-foreground/10 hover:bg-muted-foreground/15 dark:border-muted-foreground/15 dark:hover:bg-muted-foreground/30'
       )}
     >
       {isProcessing ? (
-        <div className="flex items-center gap-1.5 px-1">
+        <div className="flex w-full items-center justify-center gap-2 px-1">
           <Loader2 size={16} className="animate-spin" />
-          <span className="text-[10px] font-medium uppercase tracking-wider">Processing</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wider">Processing</span>
         </div>
       ) : isRecording ? (
-        <div className="flex items-center gap-2 px-1">
-          <div className="flex gap-0.5">
-            <span className="h-3 w-0.5 animate-[wave_1s_ease-in-out_infinite] bg-current"></span>
-            <span className="h-3 w-0.5 animate-[wave_1s_ease-in-out_0.1s_infinite] bg-current"></span>
-            <span className="h-3 w-0.5 animate-[wave_1s_ease-in-out_0.2s_infinite] bg-current"></span>
+        <div className="flex w-full items-center justify-center gap-3 px-1">
+          <div className="flex items-center gap-1">
+            <span
+              className="h-3 w-0.5 rounded-full bg-current opacity-70 animate-[wave_1s_ease-in-out_infinite]"
+              style={{ animationDelay: '0s' }}
+            ></span>
+            <span
+              className="h-4 w-0.5 rounded-full bg-current animate-[wave_1s_ease-in-out_infinite]"
+              style={{ animationDelay: '0.1s' }}
+            ></span>
+            <span
+              className="h-3 w-0.5 rounded-full bg-current opacity-70 animate-[wave_1s_ease-in-out_infinite]"
+              style={{ animationDelay: '0.2s' }}
+            ></span>
           </div>
           <Square size={14} className="fill-current" />
         </div>

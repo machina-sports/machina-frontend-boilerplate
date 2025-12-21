@@ -11,6 +11,7 @@ import { VoiceRecorder } from '@/components/assistant/voice-recorder';
 import { useAppDispatch } from '@/store/dispatch';
 import { useAppSelector } from '@/store/useState';
 import { sendVoiceMessage } from '@/providers/assistant/actions';
+import { cn } from '@/lib/utils';
 
 const ComposerAction: FC = () => {
   const runtime = useAssistantRuntime();
@@ -54,12 +55,19 @@ const ComposerAction: FC = () => {
       <ComposerAddAttachment />
 
       <div className="flex items-center gap-3 pr-1">
-        <VoiceRecorder
-          onRecordingComplete={handleVoiceRecording}
-          onRecordingChange={setIsRecordingVoice}
-          isProcessing={isProcessingVoice}
-          disabled={isProcessingVoice}
-        />
+        <div
+          className={cn(
+            'flex items-center transition-all duration-500 ease-in-out',
+            isRecordingVoice || isProcessingVoice ? 'w-auto' : 'w-auto'
+          )}
+        >
+          <VoiceRecorder
+            onRecordingComplete={handleVoiceRecording}
+            onRecordingChange={setIsRecordingVoice}
+            isProcessing={isProcessingVoice}
+            disabled={isProcessingVoice}
+          />
+        </div>
 
         <AssistantIf
           condition={({ thread }) => !thread.isRunning && !isProcessingVoice && !isRecordingVoice}
