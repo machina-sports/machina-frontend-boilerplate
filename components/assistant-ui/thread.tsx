@@ -25,7 +25,7 @@ export const Thread: FC = () => {
       <ComposerPrimitive.Root className="flex h-full w-full flex-col">
         <ThreadPrimitive.Viewport
           turnAnchor="top"
-          className="aui-thread-viewport scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500 scrollbar scrollbar-thumb-gray-500 flex-1 overflow-y-scroll scroll-smooth px-4 pt-4"
+          className="aui-thread-viewport scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 dark:hover:scrollbar-thumb-gray-500 scrollbar scrollbar-thumb-gray-500 flex-1 overflow-y-auto scroll-smooth px-4 pt-4"
         >
           <AssistantIf condition={({ thread }) => thread.isEmpty}>
             <ThreadWelcome />

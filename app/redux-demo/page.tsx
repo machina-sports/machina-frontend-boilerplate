@@ -7,7 +7,7 @@ import { useAppDispatch } from '@/store/dispatch';
 import { useAppSelector } from '@/store/useState';
 
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Database } from 'lucide-react';
+import { ArrowLeft, Database, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -23,30 +23,36 @@ export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-start gap-10 bg-zinc-50 px-6 py-16 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
       {/* Header Section */}
-      <div className="flex flex-col items-center gap-4 text-center sm:max-w-3xl sm:text-left">
-        <Image
-          src="/machina-logo-dark.svg"
-          alt="Machina Sports logo"
-          width={0}
-          height={0}
-          sizes="100vw"
-          priority
-          className="h-12 w-auto md:h-16"
-        />
-        <div className="flex items-center gap-4">
-          <div className="flex flex-col items-center sm:items-start">
-            <p className="text-xs tracking-[0.2em] text-[#ff6d00] uppercase dark:text-zinc-400">
-              Machina Boilerplate
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-[#ff6d00] sm:text-4xl">
-              Next.js 16 + Redux Toolkit + Tailwind 4
-            </h1>
+      <div className="flex max-w-4xl flex-col items-center gap-8 text-center">
+        <div className="space-y-4">
+          <div className="inline-flex items-center rounded-full border border-[#ff6d00]/20 bg-[#ff6d00]/10 px-3 py-1 text-xs font-medium text-[#ff6d00] ring-1 ring-[#ff6d00]/20 ring-inset">
+            State Management
           </div>
+          <h1 className="text-4xl font-extrabold tracking-tighter text-zinc-900 sm:text-6xl dark:text-white">
+            Redux Toolkit <span className="text-[#ff6d00]">Demo</span>
+          </h1>
+          <p className="mx-auto max-w-[42rem] text-lg leading-normal text-balance text-zinc-600 sm:text-xl dark:text-zinc-400">
+            Validate the Redux store and provider chain before adding real domains, 
+            containers, and services. Powered by Next.js 16 and Tailwind 4.
+          </p>
         </div>
-        <p className="max-w-[620px] text-left text-lg text-zinc-600 dark:text-zinc-300">
-          Use this page to validate the Redux store and provider chain before adding real domains,
-          containers, and services.
-        </p>
+
+        <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-2">
+          <Link
+            href="/"
+            className="group flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" />
+            Back to Home
+          </Link>
+          <Link
+            href="/docs"
+            className="group flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            Read Documentation
+            <ArrowUpRight size={14} className="opacity-0 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
+          </Link>
+        </div>
       </div>
 
       {/* Redux Demo Card - styled like TipCard */}
@@ -107,15 +113,6 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-        >
-          <ArrowLeft className="size-4" /> Back to Home
-        </Link>
       </div>
     </main>
   );
