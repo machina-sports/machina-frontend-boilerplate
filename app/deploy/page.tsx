@@ -12,6 +12,7 @@ import {
   Server,
   GitBranch,
   CheckCircle,
+  Check,
   AlertCircle,
   Copy,
   ArrowUpRight,
