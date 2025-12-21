@@ -190,3 +190,14 @@ h5,
 h6 {
   font-family: var(--font-sans);
 }
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1.5);
+  }
+}
+

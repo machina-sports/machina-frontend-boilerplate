@@ -81,6 +81,57 @@ class AssistantService extends ClientBaseService {
   }
 
   /**
+   * Upload a file to a connector or via a workflow using FormData (No Base64)
+   */
+  async uploadFile(
+    workflowId: string,
+    file: Blob,
+    fieldName: string = 'file'
+  ): Promise<{ url: string; path: string }> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    formData.append('workflowId', workflowId);
+
+    // Se o backend Machina suportar multipart/form-data diretamente:
+    const response = await fetch(`${this.prefix}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.data?.outputs || result.data || result;
+  }
+
+  /**
+   * Execute a specific agent by ID or name (non-streaming)
+   */
+  async executeAgentRaw(agentId: string, inputs: Record<string, any>): Promise<any> {
+    const response = await this.post<any>(
+      { inputs },
+      `${this.prefix}/agent/execute/${agentId}`,
+      {}
+    );
+    return response;
+  }
+
+  /**
+   * Execute a specific workflow by ID or name
+   */
+  async executeWorkflow(workflowId: string, inputs: Record<string, any>): Promise<any> {
+    const response = await this.post<any>(
+      inputs,
+      `${this.prefix}/workflow/execute/${workflowId}`,
+      {}
+    );
+    return response;
+  }
+
+  /**
    * Stream agent execution with async generator
    *
    * Usage:
