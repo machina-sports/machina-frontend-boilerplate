@@ -10,7 +10,15 @@ class ClientBaseController {
       requestOp.params = options.params ?? {};
       requestOp.validateStatus = options.validateStatus ?? undefined;
 
-      if (!requestOp.headers['Content-Type']) {
+      const isFormData =
+        requestOp.body instanceof FormData ||
+        (requestOp.body &&
+          typeof requestOp.body === 'object' &&
+          requestOp.body.constructor &&
+          (requestOp.body.constructor.name === 'FormData' ||
+            Object.prototype.toString.call(requestOp.body) === '[object FormData]'));
+
+      if (!requestOp.headers['Content-Type'] && !isFormData) {
         requestOp.headers['Content-Type'] = 'application/json';
       }
 

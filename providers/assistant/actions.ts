@@ -2,6 +2,7 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { assistantService } from './service';
 import type { Message, Agent, Workflow } from './types';
 import { handleStreamMessage, addUserMessage } from './reducer';
+import { convertBlobToOptimizedPCM } from '@/lib/audio';
 
 /**
  * Fetch available workflows
@@ -108,6 +109,71 @@ export const streamAgentExecution = createAsyncThunk(
     } catch (error: any) {
       console.error('Stream execution error:', error);
       return rejectWithValue(error.message || 'Failed to stream agent execution');
+    }
+  }
+);
+
+/**
+ * Send a voice message to the assistant
+ */
+export const sendVoiceMessage = createAsyncThunk(
+  'assistant/sendVoiceMessage',
+  async (
+    params: {
+      audioBlob: Blob;
+      agentId: string;
+      connectorId?: string;
+      languageCode?: string;
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      // 1. Convert audio to optimized Raw PCM (LINEAR16) with 16kHz sample rate
+      // This reduces the payload size by ~60-70% while maintaining speech quality
+      const { buffer, sampleRate } = await convertBlobToOptimizedPCM(params.audioBlob, 16000);
+      
+      // 2. Convert buffer to Base64 (to avoid CORS and signed URLs)
+      const base64Audio = btoa(
+        new Uint8Array(buffer).reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+      );
+      const dataUri = `data:application/octet-stream;base64,${base64Audio}`;
+
+      console.log('Audio info:', {
+        originalSize: params.audioBlob.size,
+        bufferSize: buffer.byteLength,
+        base64Size: dataUri.length,
+        sampleRate,
+        compressionRatio: `${Math.round((1 - buffer.byteLength / params.audioBlob.size) * 100)}%`,
+      });
+
+      // 3. Execute the voice-chat workflow directly with the Base64 data
+      // We use executeWorkflow because voice-chat is registered as a workflow in _install.yml
+      const response = await assistantService.executeWorkflow(params.agentId, {
+        audio_base64: dataUri,
+        language_code: params.languageCode || 'en-US',
+        alternative_language_codes: params.languageCode ? [] : ['pt-BR'],
+        sample_rate_hertz: sampleRate,
+        encoding: 'LINEAR16',
+      });
+
+      console.log('Voice chat response:', response);
+
+      // Ponto Crítico 1: Sempre procurar em data.outputs
+      const result = response.data?.outputs;
+      const isSuccess = response.status === true || response.status === 'success';
+
+      if (isSuccess && result) {
+        // Add the transcription as a user message
+        if (result.transcript) {
+          dispatch(addUserMessage(result.transcript));
+        }
+        return result;
+      } else {
+        throw new Error(response.message || 'Failed to process voice message');
+      }
+    } catch (error: any) {
+      console.error('Voice message error:', error);
+      return rejectWithValue(error.message || 'Failed to send voice message');
     }
   }
 );

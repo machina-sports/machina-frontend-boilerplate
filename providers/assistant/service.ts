@@ -81,6 +81,124 @@ class AssistantService extends ClientBaseService {
   }
 
   /**
+   * Get a signed upload URL from a workflow
+   */
+  async getSignedUploadUrl(
+    filename: string,
+    contentType: string,
+    workflowId: string = 'get-upload-url'
+  ): Promise<{ upload_url: string; gs_path: string }> {
+    const response = await this.executeWorkflow(workflowId, {
+      filename,
+      content_type: contentType,
+    });
+
+    // Função auxiliar para busca profunda de chaves na resposta
+    const findInObject = (obj: any, targetKey: string): any => {
+      if (!obj || typeof obj !== 'object') return null;
+      if (obj[targetKey]) return obj[targetKey];
+      for (const key in obj) {
+        const result = findInObject(obj[key], targetKey);
+        if (result) return result;
+      }
+      return null;
+    };
+
+    const upload_url = findInObject(response, 'upload_url');
+    const gs_path = findInObject(response, 'gs_path');
+
+    const isSuccess = response.status === true || response.status === 'success';
+
+    if (!isSuccess || !upload_url) {
+      console.error(
+        'ERRO: O workflow retornou sucesso mas a "upload_url" não foi encontrada em nenhum lugar da resposta.',
+        'Estrutura recebida:',
+        JSON.stringify(response, null, 2)
+      );
+      throw new Error(
+        response?.message ||
+          'Workflow executado mas upload_url não encontrada em data.outputs. Verifique a configuração de output do workflow.'
+      );
+    }
+
+    return {
+      upload_url,
+      gs_path: gs_path || `gs://machina-storage/static/${filename}`,
+    };
+  }
+
+  /**
+   * Upload raw file content to a signed URL
+   */
+  async uploadRawFile(url: string, data: ArrayBuffer | Blob, contentType: string): Promise<void> {
+    // Para GCS Signed URLs, se o Content-Type não foi assinado (X-Goog-SignedHeaders),
+    // enviá-lo pode causar erro de assinatura ou CORS.
+    // Vamos enviar o body puro. O navegador pode tentar definir um Content-Type,
+    // mas não vamos forçar um que possa quebrar a assinatura.
+    const response = await fetch(url, {
+      method: 'PUT',
+      body: data,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Erro no upload para Google Storage:', errorText);
+      throw new Error(`Upload failed with status ${response.status}: ${errorText}`);
+    }
+  }
+
+  /**
+   * Upload a file to a connector or via a workflow using FormData (No Base64)
+   */
+  async uploadFile(
+    workflowId: string,
+    file: Blob,
+    fieldName: string = 'file'
+  ): Promise<{ url: string; path: string }> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    formData.append('workflowId', workflowId);
+
+    // Se o backend Machina suportar multipart/form-data diretamente:
+    const response = await fetch(`${this.prefix}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.data?.outputs || result.data || result;
+  }
+
+  /**
+   * Execute a specific agent by ID or name (non-streaming)
+   */
+  async executeAgentRaw(agentId: string, inputs: Record<string, any>): Promise<any> {
+    const response = await this.post<any>(
+      { inputs },
+      `${this.prefix}/agent/execute/${agentId}`,
+      {}
+    );
+    return response;
+  }
+
+  /**
+   * Execute a specific workflow by ID or name
+   */
+  async executeWorkflow(workflowId: string, inputs: Record<string, any>): Promise<any> {
+    const response = await this.post<any>(
+      inputs,
+      `${this.prefix}/workflow/execute/${workflowId}`,
+      {}
+    );
+    return response;
+  }
+
+  /**
    * Stream agent execution with async generator
    *
    * Usage:

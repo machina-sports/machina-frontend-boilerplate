@@ -1,3 +1,8 @@
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(2); }
+}
+
 /* Animações suaves para transições */
 @keyframes slideInFromRight {
   from {

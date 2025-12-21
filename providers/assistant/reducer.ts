@@ -4,6 +4,7 @@ import {
   fetchWorkflows,
   fetchAgents,
   sendMessage,
+  sendVoiceMessage,
   createThread,
   fetchWorkflowDetails,
 } from './actions';
@@ -268,6 +269,27 @@ const AssistantReducer = createSlice({
           (action.payload as string) || action.error.message || 'Failed to send message';
         state.error = errorMessage;
         console.error('Send message failed:', errorMessage, action);
+      })
+      // Send Voice Message
+      .addCase(sendVoiceMessage.pending, (state) => {
+        state.status = 'streaming';
+        state.error = undefined;
+      })
+      .addCase(sendVoiceMessage.fulfilled, (state, action) => {
+        const { message, transcript } = action.payload;
+        // The user message (transcript) was already added by the action dispatching addUserMessage
+        // Now add the assistant response
+        state.messages.push({
+          id: `assistant-${Date.now()}`,
+          role: 'assistant',
+          content: message,
+          timestamp: Date.now(),
+        });
+        state.status = 'idle';
+      })
+      .addCase(sendVoiceMessage.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || 'Failed to process voice message';
       })
       // Create Thread
       .addCase(createThread.fulfilled, (state, action) => {
