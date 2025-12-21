@@ -7,12 +7,14 @@ import { TooltipIconButton } from '@/components/assistant-ui/tooltip-icon-button
 
 interface VoiceRecorderProps {
   onRecordingComplete: (audioBlob: Blob) => void;
+  onRecordingChange?: (isRecording: boolean) => void;
   disabled?: boolean;
   isProcessing?: boolean;
 }
 
 export function VoiceRecorder({
   onRecordingComplete,
+  onRecordingChange,
   disabled,
   isProcessing: isProcessingExternal,
 }: VoiceRecorderProps) {
@@ -39,10 +41,13 @@ export function VoiceRecorder({
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/m4a' });
         onRecordingComplete(audioBlob);
         stream.getTracks().forEach((track) => track.stop());
+        setIsRecording(false);
+        onRecordingChange?.(false);
       };
 
       mediaRecorder.start();
       setIsRecording(true);
+      onRecordingChange?.(true);
     } catch (err) {
       console.error('Error accessing microphone:', err);
       alert('Could not access microphone. Please check permissions.');
@@ -52,7 +57,6 @@ export function VoiceRecorder({
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
     }
   };
 

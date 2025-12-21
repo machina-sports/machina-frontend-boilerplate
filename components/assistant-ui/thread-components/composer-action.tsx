@@ -17,6 +17,7 @@ const ComposerAction: FC = () => {
   const dispatch = useAppDispatch();
   const { selectedWorkflow } = useAppSelector((state) => state.assistant);
   const [isProcessingVoice, setIsProcessingVoice] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   const handleVoiceRecording = async (audioBlob: Blob) => {
     setIsProcessingVoice(true);
@@ -46,6 +47,8 @@ const ComposerAction: FC = () => {
     }
   };
 
+  // memoize: if the isProcessingVoice toggled, remove from ui the Compose.Primitive.Send button for a smoother ux
+
   return (
     <div className="aui-composer-action-wrapper relative mx-2 mb-2 flex items-center justify-between gap-2">
       <ComposerAddAttachment />
@@ -53,10 +56,14 @@ const ComposerAction: FC = () => {
       <div className="flex items-center gap-3 pr-1">
         <VoiceRecorder
           onRecordingComplete={handleVoiceRecording}
+          onRecordingChange={setIsRecordingVoice}
           isProcessing={isProcessingVoice}
+          disabled={isProcessingVoice}
         />
 
-        <AssistantIf condition={({ thread }) => !thread.isRunning}>
+        <AssistantIf
+          condition={({ thread }) => !thread.isRunning && !isProcessingVoice && !isRecordingVoice}
+        >
           <ComposerPrimitive.Send asChild>
             <TooltipIconButton
               tooltip="Send message"
