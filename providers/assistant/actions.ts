@@ -132,7 +132,7 @@ export const sendVoiceMessage = createAsyncThunk(
       // This reduces the payload size by ~60-70% while maintaining speech quality
       const { buffer, sampleRate } = await convertBlobToOptimizedPCM(params.audioBlob, 16000);
       
-      // 2. Convert buffer to Base64 (to avoid CORS and signed URLs)
+      // 2. Convert buffer to Base64 for server-side upload
       const base64Audio = btoa(
         new Uint8Array(buffer).reduce((acc, byte) => acc + String.fromCharCode(byte), '')
       );
