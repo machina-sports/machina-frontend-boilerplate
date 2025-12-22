@@ -40,23 +40,6 @@ export default function ChatPage() {
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isFullscreen, dispatch]);
 
-  // Apply theme
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else if (theme === 'light') {
-      document.documentElement.classList.remove('dark');
-    } else {
-      // auto - use system preference
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    }
-  }, [theme]);
-
   return (
     <div
       className={cn(

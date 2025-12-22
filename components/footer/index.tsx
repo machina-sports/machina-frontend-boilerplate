@@ -5,13 +5,18 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAppSelector } from '@/store/useState';
+import { useAppDispatch } from '@/store/dispatch';
+import { setTheme } from '@/providers/chat-ui/reducer';
+
+import { Sun, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const version = '0.1.0'; // You can import from package.json if needed
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
   const { theme } = useAppSelector((state) => state.chatUI);
-
   const isChatPage = pathname === '/chat';
   if (isChatPage) return null;
 
@@ -22,6 +27,10 @@ const Footer = () => {
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const logoSrc = isDark ? '/logo-grey.svg' : '/machina-logo-dark.svg';
+
+  const toggleTheme = () => {
+    dispatch(setTheme(theme === 'dark' ? 'light' : 'dark'));
+  };
 
   return (
     <footer className="w-full border-t border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
@@ -49,6 +58,15 @@ const Footer = () => {
               Copyright © {currentYear} - All rights reserved
             </p>
             <p className="text-xs text-zinc-500 dark:text-zinc-500">v{version}</p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="mt-2 h-9 w-9 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
           </div>
 
           {/* Middle Section - Links */}
