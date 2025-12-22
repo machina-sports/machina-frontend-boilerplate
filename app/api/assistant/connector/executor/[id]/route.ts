@@ -19,12 +19,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const contentType = req.headers.get('content-type') || '';
 
-    console.log(`[Connector Proxy] Incoming request for ID: ${id}`);
-    console.log(`[Connector Proxy] Content-Type: ${contentType}`);
-
     if (contentType.toLowerCase().includes('multipart/form-data')) {
-      console.log('[Connector Proxy] Forwarding multipart/form-data request as arrayBuffer');
-
       const buffer = await req.arrayBuffer();
 
       const response = await fetch(`${MACHINA_API_URL}/connector/executor/${id}`, {
@@ -38,7 +33,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Machina API error (connector):', response.status, errorText);
 
         return NextResponse.json(
           {
@@ -76,7 +70,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json(data);
     }
   } catch (error: any) {
-    console.error('Error proxying connector executor:', error);
     return NextResponse.json(
       { status: false, error: 'Internal server error', message: error?.message || 'Unknown error' },
       { status: 500 }

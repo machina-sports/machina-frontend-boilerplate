@@ -22,8 +22,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Thread ID is required' }, { status: 400 });
     }
 
-    console.log('[Thread GET] Fetching thread:', id);
-
     // Fetch thread from Machina API using the direct document endpoint
     const response = await fetch(`${MACHINA_API_URL}/document/${id}`, {
       method: 'GET',
@@ -35,7 +33,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
     if (!response.ok) {
       // Fallback to search if direct document fetch fails
-      console.log('[Thread GET] Direct fetch failed, trying search...');
       const isObjectId = id.length === 24 && /^[0-9a-fA-F]{24}$/.test(id);
       const filters = isObjectId ? { _id: id } : { document_id: id, name: 'thread' };
 
@@ -54,7 +51,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
 
       if (!searchResponse.ok) {
         const errorText = await searchResponse.text();
-        console.error('[Thread GET] Machina API error (search):', searchResponse.status, errorText);
         return NextResponse.json(
           { error: 'Failed to fetch thread', details: errorText },
           { status: searchResponse.status }
@@ -72,7 +68,6 @@ export async function GET(req: NextRequest, context: RouteContext) {
     const threadData = await response.json();
     return NextResponse.json({ thread: threadData });
   } catch (error) {
-    console.error('[Thread GET] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Internal server error', message: errorMessage },

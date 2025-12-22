@@ -107,7 +107,6 @@ export const streamAgentExecution = createAsyncThunk(
 
       return { success: true };
     } catch (error: any) {
-      console.error('Stream execution error:', error);
       return rejectWithValue(error.message || 'Failed to stream agent execution');
     }
   }
@@ -131,20 +130,12 @@ export const sendVoiceMessage = createAsyncThunk(
       // 1. Convert audio to optimized Raw PCM (LINEAR16) with 16kHz sample rate
       // This reduces the payload size by ~60-70% while maintaining speech quality
       const { buffer, sampleRate } = await convertBlobToOptimizedPCM(params.audioBlob, 16000);
-      
+
       // 2. Convert buffer to Base64 for server-side upload
       const base64Audio = btoa(
         new Uint8Array(buffer).reduce((acc, byte) => acc + String.fromCharCode(byte), '')
       );
       const dataUri = `data:application/octet-stream;base64,${base64Audio}`;
-
-      console.log('Audio info:', {
-        originalSize: params.audioBlob.size,
-        bufferSize: buffer.byteLength,
-        base64Size: dataUri.length,
-        sampleRate,
-        compressionRatio: `${Math.round((1 - buffer.byteLength / params.audioBlob.size) * 100)}%`,
-      });
 
       // 3. Execute the voice-chat workflow directly with the Base64 data
       // We use executeWorkflow because voice-chat is registered as a workflow in _install.yml
@@ -155,8 +146,6 @@ export const sendVoiceMessage = createAsyncThunk(
         sample_rate_hertz: sampleRate,
         encoding: 'LINEAR16',
       });
-
-      console.log('Voice chat response:', response);
 
       // Ponto Crítico 1: Sempre procurar em data.outputs
       const result = response.data?.outputs;
@@ -172,7 +161,6 @@ export const sendVoiceMessage = createAsyncThunk(
         throw new Error(response.message || 'Failed to process voice message');
       }
     } catch (error: any) {
-      console.error('Voice message error:', error);
       return rejectWithValue(error.message || 'Failed to send voice message');
     }
   }

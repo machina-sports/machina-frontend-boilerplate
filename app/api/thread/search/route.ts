@@ -17,8 +17,6 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '10', 10);
     const sort = searchParams.get('sort') || '-updated';
 
-    console.log('[Thread Search] Searching threads, limit:', limit, 'sort:', sort);
-
     // Search for thread documents, sorted by updated date
     const response = await fetch(`${MACHINA_API_URL}/document/search`, {
       method: 'POST',
@@ -36,7 +34,6 @@ export async function GET(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Thread Search] Machina API error:', response.status, errorText);
       return NextResponse.json(
         { error: 'Failed to search threads', details: errorText },
         { status: response.status }
@@ -45,14 +42,11 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json();
 
-    console.log('[Thread Search] Found threads:', data.data?.length || 0);
-
     return NextResponse.json({
       threads: data.data || [],
       total: data.total || 0,
     });
   } catch (error) {
-    console.error('[Thread Search] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { error: 'Internal server error', message: errorMessage },
@@ -60,17 +54,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

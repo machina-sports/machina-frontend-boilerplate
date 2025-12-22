@@ -46,8 +46,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Error proxying agent execution:', error);
-
     return NextResponse.json(
       {
         status: false,

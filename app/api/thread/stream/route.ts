@@ -15,8 +15,6 @@ export async function POST(req: NextRequest) {
     const target = searchParams.get('target') || 'machina-assistant-executor';
     const type = searchParams.get('type') || 'agent';
 
-    console.log('[Thread Stream] Target:', target, 'Type:', type);
-
     // Check if this is an agent or workflow request
     const isAgent = type === 'agent';
 
@@ -24,9 +22,6 @@ export async function POST(req: NextRequest) {
     const endpoint = isAgent
       ? `${MACHINA_API_URL}/agent/stream/${target}`
       : `${MACHINA_API_URL}/workflow/stream/${target}`;
-
-    console.log('[Thread Stream] Calling endpoint:', endpoint);
-    console.log('[Thread Stream] Request body:', JSON.stringify(body, null, 2));
 
     const response = await fetch(endpoint, {
       method: 'POST',
@@ -39,7 +34,6 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Thread Stream] Machina API error:', response.status, errorText);
       return new Response(
         JSON.stringify({ type: 'error', content: `Backend error: ${response.status}` }),
         {
@@ -48,8 +42,6 @@ export async function POST(req: NextRequest) {
         }
       );
     }
-
-    console.log('[Thread Stream] Response received, streaming back to client...');
 
     // Create a readable stream that logs chunks as they pass through
     const reader = response.body?.getReader();
@@ -67,7 +59,6 @@ export async function POST(req: NextRequest) {
             const { done, value } = await reader.read();
 
             if (done) {
-              console.log('[Thread Stream] Stream completed');
               controller.close();
               break;
             }
@@ -83,10 +74,6 @@ export async function POST(req: NextRequest) {
               if (line.trim()) {
                 try {
                   const parsed = JSON.parse(line);
-                  console.log('[Thread Stream] Chunk type:', parsed.type, 'has metadata:', !!parsed.metadata);
-                  if (parsed.type === 'start' || parsed.type === 'done') {
-                    console.log('[Thread Stream] Important chunk:', JSON.stringify(parsed, null, 2));
-                  }
                 } catch (e) {
                   // Not JSON, skip logging
                 }
@@ -97,7 +84,6 @@ export async function POST(req: NextRequest) {
             controller.enqueue(value);
           }
         } catch (error) {
-          console.error('[Thread Stream] Stream error:', error);
           controller.error(error);
         }
       },
@@ -112,7 +98,6 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('[Thread Stream] Error:', error);
     return new Response(
       JSON.stringify({
         type: 'error',
