@@ -26,8 +26,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
     const { agent } = await context.params;
     const body = await req.json();
 
-    console.log(`[Stream Proxy] Starting stream for agent: ${agent}`);
-
     // Forward request to Machina API streaming endpoint with X-Api-Token header
     const response = await fetch(`${MACHINA_API_URL}/agent/stream/${encodeURIComponent(agent)}`, {
       method: 'POST',
@@ -40,7 +38,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Stream Proxy] Machina API error:', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -54,13 +51,11 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     // Check if response is streamable
     if (!response.body) {
-      console.error('[Stream Proxy] Response body is null');
       return NextResponse.json({ error: 'Stream response body is null' }, { status: 500 });
     }
 
     // Get task ID from response headers
     const taskId = response.headers.get('X-Task-ID');
-    console.log(`[Stream Proxy] Task ID: ${taskId}`);
 
     // Create a TransformStream to proxy the NDJSON stream
     const stream = new TransformStream();
@@ -77,7 +72,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
           const { done, value } = await reader.read();
 
           if (done) {
-            console.log('[Stream Proxy] Stream completed');
             await writer.close();
             break;
           }
@@ -87,8 +81,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
           await writer.write(encoder.encode(chunk));
         }
       } catch (error) {
-        console.error('[Stream Proxy] Stream error:', error);
-
         // Send error message in NDJSON format
         const errorMessage =
           JSON.stringify({
@@ -112,8 +104,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
       },
     });
   } catch (error: any) {
-    console.error('[Stream Proxy] Error:', error);
-
     return NextResponse.json(
       {
         error: 'Internal server error',

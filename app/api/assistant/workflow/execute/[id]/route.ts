@@ -18,8 +18,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const body = await req.json();
 
-    console.log(`[Workflow Execution Proxy] Executing workflow: ${id}`);
-
     // Forward request to Machina API with X-Api-Token header
     const response = await fetch(`${MACHINA_API_URL}/workflow/execute/${id}`, {
       method: 'POST',
@@ -32,7 +30,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Machina API error (workflow):', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -48,8 +45,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: any) {
-    console.error('Error proxying workflow execution:', error);
-
     return NextResponse.json(
       {
         status: false,

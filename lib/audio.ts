@@ -52,7 +52,7 @@ export async function convertBlobToOptimizedPCM(
 
   // Get the original sample rate
   const originalSampleRate = audioBuffer.sampleRate;
-  
+
   // Get the PCM data from the first channel (mono)
   const inputData = audioBuffer.getChannelData(0);
 
@@ -66,7 +66,7 @@ export async function convertBlobToOptimizedPCM(
     const sourceIndex = i * ratio;
     const index = Math.floor(sourceIndex);
     const fraction = sourceIndex - index;
-    
+
     // Linear interpolation between samples
     if (index + 1 < inputData.length) {
       resampledData[i] = inputData[index] * (1 - fraction) + inputData[index + 1] * fraction;
@@ -86,8 +86,6 @@ export async function convertBlobToOptimizedPCM(
 
   // Clean up
   await audioContext.close();
-
-  console.log(`Audio resampled: ${originalSampleRate}Hz → ${targetSampleRate}Hz (${Math.round((1 - outputLength / inputData.length) * 100)}% size reduction)`);
 
   return { buffer: pcmBuffer.buffer, sampleRate: targetSampleRate };
 }
