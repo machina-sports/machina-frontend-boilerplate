@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { getReadmeContent } from '@/lib/readme';
 import DocsClient from './docs-client';
 import { CodeBlock } from '@/components/ui/code-block';
+import { DocsHeaderLogo } from '@/components/docs/docs-header-logo';
 
 import Link from 'next/link';
 
@@ -16,16 +17,7 @@ async function DocsPage() {
         <div className="mx-auto max-w-5xl px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-              <Link href="/" className="transition-opacity hover:opacity-80">
-                <Image
-                  src="/machina-logo-dark.svg"
-                  alt="Machina Sports logo"
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  className="h-7 w-auto md:h-8"
-                />
-              </Link>
+              <DocsHeaderLogo />
               <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
               <h1 className="text-sm font-semibold tracking-tight text-zinc-900 md:text-base dark:text-zinc-50">
                 Documentation
