@@ -1,5 +1,13 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import type { AssistantState, Message, AssistantObject, StreamMessage } from './types';
+import type {
+  AssistantState,
+  Message,
+  AssistantObject,
+  StreamMessage,
+  Workflow,
+  Agent,
+  VoiceResponse,
+} from './types';
 import {
   fetchWorkflows,
   fetchAgents,
@@ -215,9 +223,9 @@ const AssistantReducer = createSlice({
         state.status = 'loading';
         state.error = undefined;
       })
-      .addCase(fetchWorkflows.fulfilled, (state, action) => {
+      .addCase(fetchWorkflows.fulfilled, (state, action: PayloadAction<Workflow[]>) => {
         // Normalize workflows so both `_id` and `id` are available for UI code
-        state.workflows = (action.payload as any[]).map((w) => ({
+        state.workflows = action.payload.map((w) => ({
           ...w,
           id: w._id || w.id,
         }));
@@ -232,7 +240,7 @@ const AssistantReducer = createSlice({
         state.status = 'loading';
         state.error = undefined;
       })
-      .addCase(fetchAgents.fulfilled, (state, action) => {
+      .addCase(fetchAgents.fulfilled, (state, action: PayloadAction<Agent[]>) => {
         state.agents = action.payload;
         state.status = 'idle';
       })
@@ -241,9 +249,9 @@ const AssistantReducer = createSlice({
         state.error = action.error.message;
       })
       // Fetch Workflow Details
-      .addCase(fetchWorkflowDetails.fulfilled, (state, action) => {
-        const payload = action.payload as any;
-        const normalized = { ...payload, id: payload._id || payload.id };
+      .addCase(fetchWorkflowDetails.fulfilled, (state, action: PayloadAction<Workflow>) => {
+        const payload = action.payload;
+        const normalized: Workflow = { ...payload, id: payload._id || payload.id };
         const existingIndex = state.workflows.findIndex(
           (w) => (w.id || w._id) === (normalized.id || normalized._id)
         );
@@ -258,11 +266,14 @@ const AssistantReducer = createSlice({
         state.status = 'streaming';
         state.error = undefined;
       })
-      .addCase(sendMessage.fulfilled, (state, action) => {
-        state.messages.push(action.payload.message);
-        state.threadId = action.payload.threadId;
-        state.status = 'idle';
-      })
+      .addCase(
+        sendMessage.fulfilled,
+        (state, action: PayloadAction<{ message: Message; threadId: string }>) => {
+          state.messages.push(action.payload.message);
+          state.threadId = action.payload.threadId;
+          state.status = 'idle';
+        }
+      )
       .addCase(sendMessage.rejected, (state, action) => {
         state.status = 'failed';
         const errorMessage =
@@ -275,8 +286,8 @@ const AssistantReducer = createSlice({
         state.status = 'streaming';
         state.error = undefined;
       })
-      .addCase(sendVoiceMessage.fulfilled, (state, action) => {
-        const { message, transcript } = action.payload;
+      .addCase(sendVoiceMessage.fulfilled, (state, action: PayloadAction<VoiceResponse>) => {
+        const { message } = action.payload;
         // The user message (transcript) was already added by the action dispatching addUserMessage
         // Now add the assistant response
         state.messages.push({
@@ -292,7 +303,7 @@ const AssistantReducer = createSlice({
         state.error = (action.payload as string) || 'Failed to process voice message';
       })
       // Create Thread
-      .addCase(createThread.fulfilled, (state, action) => {
+      .addCase(createThread.fulfilled, (state, action: PayloadAction<string>) => {
         state.threadId = action.payload;
       });
   },

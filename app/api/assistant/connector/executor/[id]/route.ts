@@ -69,9 +69,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       const data = await response.json();
       return NextResponse.json(data);
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { status: false, error: 'Internal server error', message: error?.message || 'Unknown error' },
+      { status: false, error: 'Internal server error', message: errorMessage },
       { status: 500 }
     );
   }

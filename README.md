@@ -7,7 +7,7 @@ This boilerplate is the standardized foundation for all Machina Sports frontends
 - **Tailwind CSS 4** (Styling)
 - **White Label / Multi-Brand Support** (Configurable theming and content)
 - **Strict TypeScript** & **ESLint** (Code quality)
-- **🤖 AI Assistant** (Google Gemini-powered help for developers)
+- **🤖 Machina Assistant** (Machina Advanced Assitant Model )
 
 ---
 

@@ -1,15 +1,16 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { assistantService } from './service';
-import type { Message, Agent, Workflow } from './types';
+import type { Message, Agent, Workflow, SearchFilters, VoiceResponse } from './types';
 import { handleStreamMessage, addUserMessage } from './reducer';
 import { convertBlobToOptimizedPCM } from '@/lib/audio';
+import type { AppState } from '@/store';
 
 /**
  * Fetch available workflows
  */
 export const fetchWorkflows = createAsyncThunk(
   'assistant/fetchWorkflows',
-  async (filters?: Record<string, any>) => {
+  async (filters?: SearchFilters) => {
     const workflows = await assistantService.getWorkflows(filters || {});
     return workflows;
   }
@@ -20,7 +21,7 @@ export const fetchWorkflows = createAsyncThunk(
  */
 export const fetchAgents = createAsyncThunk(
   'assistant/fetchAgents',
-  async (filters?: Record<string, any>) => {
+  async (filters?: SearchFilters) => {
     const agents = await assistantService.getAgents(filters || {});
     return agents;
   }
@@ -65,14 +66,14 @@ export const streamAgentExecution = createAsyncThunk(
   ) => {
     try {
       // Get conversation history from current state
-      const state = getState() as any;
+      const state = getState() as AppState;
       const messages = state.assistant.messages || [];
 
       // Build conversation history (last 10 messages for context)
       const conversationHistory = messages
         .slice(-10)
-        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
-        .map((msg: any) => ({
+        .filter((msg: Message) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg: Message) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
         }));
@@ -106,8 +107,10 @@ export const streamAgentExecution = createAsyncThunk(
       }
 
       return { success: true };
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to stream agent execution');
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to stream agent execution';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -148,7 +151,7 @@ export const sendVoiceMessage = createAsyncThunk(
       });
 
       // Ponto Crítico 1: Sempre procurar em data.outputs
-      const result = response.data?.outputs;
+      const result = response.data?.outputs as VoiceResponse | undefined;
       const isSuccess = response.status === true || response.status === 'success';
 
       if (isSuccess && result) {
@@ -160,8 +163,9 @@ export const sendVoiceMessage = createAsyncThunk(
       } else {
         throw new Error(response.message || 'Failed to process voice message');
       }
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to send voice message');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send voice message';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -183,14 +187,14 @@ export const sendMessage = createAsyncThunk(
   ) => {
     try {
       // Get conversation history from current state
-      const state = getState() as any;
+      const state = getState() as AppState;
       const messages = state.assistant.messages || [];
 
       // Build conversation history (last 10 messages for context)
       const conversationHistory = messages
         .slice(-10)
-        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
-        .map((msg: any) => ({
+        .filter((msg: Message) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg: Message) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
         }));
@@ -200,8 +204,9 @@ export const sendMessage = createAsyncThunk(
         conversationHistory,
       });
       return response;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to send message');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      return rejectWithValue(errorMessage);
     }
   }
 );

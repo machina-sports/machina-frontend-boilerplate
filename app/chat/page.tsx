@@ -11,11 +11,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useBrand } from '@/contexts/brand-context';
 import './chat-page.css';
 
 export default function ChatPage() {
   const dispatch = useAppDispatch();
-  const { isFullscreen, theme } = useAppSelector((state) => state.chatUI);
+  const brand = useBrand();
+  const { isFullscreen } = useAppSelector((state) => state.chatUI);
 
   // Manage fullscreen
   useEffect(() => {
@@ -63,15 +65,15 @@ export default function ChatPage() {
           )}
           <div className="flex items-center gap-2">
             <Image
-              src="/favicon.ico"
-              alt="Machina Boilerplate"
-              width={20}
-              height={20}
+              src={brand.content.favicon || '/favicon.ico'}
+              alt={brand.content.title}
+              width={24}
+              height={24}
               className="md:h-6 md:w-6"
             />
             <div className="hidden h-6 w-px bg-zinc-300 md:block dark:bg-zinc-700"></div>
             <h1 className="text-base font-semibold text-zinc-900 md:text-lg dark:text-zinc-100">
-              Machina <span className="hidden sm:inline">Assistant</span>
+              {brand.content.title}
             </h1>
           </div>
         </div>
