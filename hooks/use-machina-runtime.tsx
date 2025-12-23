@@ -3,10 +3,10 @@
 import { useMemo } from 'react';
 import { useLocalRuntime } from '@assistant-ui/react';
 import { createMachinaStreamingAdapter } from '@/lib/machina-streaming-adapter';
-import { useSelector } from 'react-redux';
+import { useAppSelector } from '@/store/useState';
 
 export function useMachinaRuntime() {
-  const { threadId, selectedAgent } = useSelector((state: any) => state.assistant);
+  const { threadId, selectedAgent } = useAppSelector((state) => state.assistant);
 
   const adapter = useMemo(() => {
     return createMachinaStreamingAdapter({

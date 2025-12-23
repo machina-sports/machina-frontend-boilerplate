@@ -80,12 +80,13 @@ export async function POST(req: NextRequest, context: RouteContext) {
           const chunk = decoder.decode(value, { stream: true });
           await writer.write(encoder.encode(chunk));
         }
-      } catch (error) {
+      } catch (error: unknown) {
         // Send error message in NDJSON format
+        const errorMessageStr = error instanceof Error ? error.message : 'Unknown error';
         const errorMessage =
           JSON.stringify({
             type: 'error',
-            content: `Stream proxy error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            content: `Stream proxy error: ${errorMessageStr}`,
             metadata: {},
           }) + '\n';
 
@@ -103,11 +104,12 @@ export async function POST(req: NextRequest, context: RouteContext) {
         ...(taskId ? { 'X-Task-ID': taskId } : {}),
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

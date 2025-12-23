@@ -21,7 +21,7 @@ export interface WorkflowParameter {
   type?: string;
   required?: boolean;
   description?: string;
-  default?: any;
+  default?: unknown;
 }
 
 /**
@@ -36,8 +36,8 @@ export interface Workflow {
   name: string;
   description?: string;
   type: string;
-  inputs?: Record<string, any>;
-  outputs?: Record<string, any>;
+  inputs?: Record<string, unknown>;
+  outputs?: Record<string, unknown>;
   /**
    * Parameters for the workflow (derived from inputs or set explicitly)
    */
@@ -68,7 +68,7 @@ export interface AssistantObject {
   type?: string;
   title?: string;
   description?: string;
-  [key: string]: any; // Flexible for different object types
+  [key: string]: unknown; // Flexible for different object types
 }
 
 /**
@@ -115,7 +115,7 @@ export interface SearchFilters {
   name?: string;
   status?: string;
   project_id?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -147,13 +147,22 @@ export interface SearchResponse<T> {
 export interface AgentExecutionRequest {
   messages: Array<{
     role: 'user' | 'assistant' | 'system';
-    content: string | Array<{ type: string; text?: string; [key: string]: any }>;
+    content: string | Array<{ type: string; text?: string; [key: string]: unknown }>;
   }>;
   stream_workflows?: boolean;
   'context-agent'?: {
     thread_id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
+}
+
+/**
+ * Voice message response
+ */
+export interface VoiceResponse {
+  message: string;
+  transcript: string;
+  [key: string]: unknown;
 }
 
 /**
