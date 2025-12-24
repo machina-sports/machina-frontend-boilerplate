@@ -12,6 +12,7 @@ import remarkGfm from 'remark-gfm';
 import { type FC, memo } from 'react';
 
 import { CodeBlock } from '@/components/ui/code-block';
+import { Mermaid } from '@/components/ui/mermaid';
 import { cn } from '@/lib/utils';
 
 const MarkdownTextImpl = () => {
@@ -27,8 +28,6 @@ const MarkdownTextImpl = () => {
 export const MarkdownText = memo(MarkdownTextImpl);
 
 const CodeHeader: FC<CodeHeaderProps> = () => {
-  // CodeHeader não é mais necessário pois o CodeBlock já tem header integrado
-  // Mas mantemos para compatibilidade caso seja usado em algum lugar
   return null;
 };
 
@@ -166,23 +165,24 @@ const defaultComponents = memoizeMarkdownComponents({
     <sup className={cn('aui-md-sup [&>a]:text-xs [&>a]:no-underline', className)} {...props} />
   ),
   pre: ({ children, ...props }) => {
-    // Pre não precisa de estilização quando usamos CodeBlock
     return <>{children}</>;
   },
   code: function Code({ className, children, ...props }) {
     const isCodeBlock = useIsMarkdownCodeBlock();
 
-    // Detecta se é código inline ou block
-    // Code blocks têm className com "language-" e geralmente têm múltiplas linhas
     const isInline =
       !className || (!String(children).includes('\n') && !className.includes('language-'));
 
-    // Se for um code block, usa o CodeBlock customizado
+    const language = className?.replace(/language-/, '') || '';
+
+    if (language === 'mermaid') {
+      return <Mermaid chart={String(children).replace(/\n$/, '')} />;
+    }
+
     if (isCodeBlock || (!isInline && className)) {
       return <CodeBlock className={className}>{children}</CodeBlock>;
     }
 
-    // Se for código inline, usa estilo simples
     return (
       <code
         className={cn(
