@@ -16,8 +16,6 @@ const rootDir = path.join(__dirname, '..');
 const gitignorePath = path.join(rootDir, '.gitignore');
 const packageJsonPath = path.join(rootDir, 'package.json');
 
-console.log('🔧 Restoring boilerplate to development mode...\n');
-
 // Read current .gitignore
 if (fs.existsSync(gitignorePath)) {
   let gitignoreContent = fs.readFileSync(gitignorePath, 'utf-8');
@@ -47,12 +45,7 @@ if (fs.existsSync(gitignorePath)) {
     }
 
     fs.writeFileSync(gitignorePath, updatedGitignore, 'utf-8');
-    console.log('✅ Removed example files from .gitignore');
-  } else {
-    console.log('ℹ️  No boilerplate section found in .gitignore');
   }
-} else {
-  console.log('ℹ️  .gitignore not found');
 }
 
 // Restore dependencies in package.json
@@ -79,7 +72,6 @@ config.exampleDependencies.dependencies.forEach((dep) => {
   if (!packageJson.dependencies[dep]) {
     packageJson.dependencies[dep] = originalDeps[dep] || 'latest';
     hasChanges = true;
-    console.log(`✅ Restored dependency: ${dep}`);
   }
 });
 
@@ -88,20 +80,9 @@ config.exampleDependencies.devDependencies.forEach((dep) => {
   if (!packageJson.devDependencies[dep]) {
     packageJson.devDependencies[dep] = originalDevDeps[dep] || 'latest';
     hasChanges = true;
-    console.log(`✅ Restored devDependency: ${dep}`);
   }
 });
 
 if (hasChanges) {
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf-8');
-  console.log('\n✅ Updated package.json');
-  console.log('\n⚠️  Run "npm install" to restore dependencies');
-} else {
-  console.log('\nℹ️  No dependency changes needed');
 }
-
-console.log('\n✨ Development mode restored!');
-console.log('📝 Example files are now tracked by git');
-console.log(
-  '💡 Note: If you manually removed code references, you may need to restore them manually.\n'
-);

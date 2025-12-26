@@ -29,7 +29,6 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Machina API error:', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -43,13 +42,12 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Error proxying workflow search:', error);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );
@@ -57,23 +55,19 @@ export async function POST(req: NextRequest) {
 }
 
 /**
- * GET endpoint for retrieving workflow by name or ID
+ * GET endpoint for retrieving workflow by ID
  */
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const name = searchParams.get('name');
     const id = searchParams.get('id');
 
-    if (!name && !id) {
-      return NextResponse.json({ error: 'Workflow name or ID is required' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'Workflow ID is required' }, { status: 400 });
     }
 
-    // Build endpoint path
-    const pathParam = id ? `id/${id}` : encodeURIComponent(name!);
-
     // Forward request to Machina API with X-Api-Token header
-    const response = await fetch(`${MACHINA_API_URL}/workflow/${pathParam}`, {
+    const response = await fetch(`${MACHINA_API_URL}/workflow/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +77,6 @@ export async function GET(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Machina API error:', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -97,13 +90,12 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('Error proxying workflow get:', error);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

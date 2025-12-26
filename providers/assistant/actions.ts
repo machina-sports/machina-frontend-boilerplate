@@ -1,14 +1,16 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { assistantService } from './service';
-import type { Message, Agent, Workflow } from './types';
+import type { Message, Agent, Workflow, SearchFilters, VoiceResponse } from './types';
 import { handleStreamMessage, addUserMessage } from './reducer';
+import { convertBlobToOptimizedPCM } from '@/lib/audio';
+import type { AppState } from '@/store';
 
 /**
  * Fetch available workflows
  */
 export const fetchWorkflows = createAsyncThunk(
   'assistant/fetchWorkflows',
-  async (filters?: Record<string, any>) => {
+  async (filters?: SearchFilters) => {
     const workflows = await assistantService.getWorkflows(filters || {});
     return workflows;
   }
@@ -19,7 +21,7 @@ export const fetchWorkflows = createAsyncThunk(
  */
 export const fetchAgents = createAsyncThunk(
   'assistant/fetchAgents',
-  async (filters?: Record<string, any>) => {
+  async (filters?: SearchFilters) => {
     const agents = await assistantService.getAgents(filters || {});
     return agents;
   }
@@ -64,14 +66,14 @@ export const streamAgentExecution = createAsyncThunk(
   ) => {
     try {
       // Get conversation history from current state
-      const state = getState() as any;
+      const state = getState() as AppState;
       const messages = state.assistant.messages || [];
 
       // Build conversation history (last 10 messages for context)
       const conversationHistory = messages
         .slice(-10)
-        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
-        .map((msg: any) => ({
+        .filter((msg: Message) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg: Message) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
         }));
@@ -105,9 +107,65 @@ export const streamAgentExecution = createAsyncThunk(
       }
 
       return { success: true };
-    } catch (error: any) {
-      console.error('Stream execution error:', error);
-      return rejectWithValue(error.message || 'Failed to stream agent execution');
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to stream agent execution';
+      return rejectWithValue(errorMessage);
+    }
+  }
+);
+
+/**
+ * Send a voice message to the assistant
+ */
+export const sendVoiceMessage = createAsyncThunk(
+  'assistant/sendVoiceMessage',
+  async (
+    params: {
+      audioBlob: Blob;
+      agentId: string;
+      connectorId?: string;
+      languageCode?: string;
+    },
+    { dispatch, rejectWithValue }
+  ) => {
+    try {
+      // 1. Convert audio to optimized Raw PCM (LINEAR16) with 16kHz sample rate
+      // This reduces the payload size by ~60-70% while maintaining speech quality
+      const { buffer, sampleRate } = await convertBlobToOptimizedPCM(params.audioBlob, 16000);
+
+      // 2. Convert buffer to Base64 for server-side upload
+      const base64Audio = btoa(
+        new Uint8Array(buffer).reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+      );
+      const dataUri = `data:application/octet-stream;base64,${base64Audio}`;
+
+      // 3. Execute the voice-chat workflow directly with the Base64 data
+      // We use executeWorkflow because voice-chat is registered as a workflow in _install.yml
+      const response = await assistantService.executeWorkflow(params.agentId, {
+        audio_base64: dataUri,
+        language_code: params.languageCode || 'en-US',
+        alternative_language_codes: params.languageCode ? [] : ['pt-BR'],
+        sample_rate_hertz: sampleRate,
+        encoding: 'LINEAR16',
+      });
+
+      // Ponto Crítico 1: Sempre procurar em data.outputs
+      const result = response.data?.outputs as VoiceResponse | undefined;
+      const isSuccess = response.status === true || response.status === 'success';
+
+      if (isSuccess && result) {
+        // Add the transcription as a user message
+        if (result.transcript) {
+          dispatch(addUserMessage(result.transcript));
+        }
+        return result;
+      } else {
+        throw new Error(response.message || 'Failed to process voice message');
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send voice message';
+      return rejectWithValue(errorMessage);
     }
   }
 );
@@ -129,14 +187,14 @@ export const sendMessage = createAsyncThunk(
   ) => {
     try {
       // Get conversation history from current state
-      const state = getState() as any;
+      const state = getState() as AppState;
       const messages = state.assistant.messages || [];
 
       // Build conversation history (last 10 messages for context)
       const conversationHistory = messages
         .slice(-10)
-        .filter((msg: any) => msg.role === 'user' || msg.role === 'assistant')
-        .map((msg: any) => ({
+        .filter((msg: Message) => msg.role === 'user' || msg.role === 'assistant')
+        .map((msg: Message) => ({
           role: msg.role as 'user' | 'assistant',
           content: msg.content,
         }));
@@ -146,8 +204,9 @@ export const sendMessage = createAsyncThunk(
         conversationHistory,
       });
       return response;
-    } catch (error: any) {
-      return rejectWithValue(error.message || 'Failed to send message');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      return rejectWithValue(errorMessage);
     }
   }
 );

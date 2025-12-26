@@ -30,8 +30,6 @@ if (!fs.existsSync(packageJsonPath)) {
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
-console.log('🚀 Preparing boilerplate for production...\n');
-
 // Add example files to .gitignore if not already present
 const gitignoreEntries = config.exampleFiles.map((file) => {
   // Ensure proper path format
@@ -46,9 +44,6 @@ const boilerplateSection = separator + gitignoreEntries.join('\n') + '\n';
 if (!gitignoreContent.includes('# Boilerplate example files')) {
   updatedGitignore += boilerplateSection;
   fs.writeFileSync(gitignorePath, updatedGitignore, 'utf-8');
-  console.log('✅ Added example files to .gitignore');
-} else {
-  console.log('ℹ️  Example files already in .gitignore');
 }
 
 // Remove example dependencies from package.json
@@ -59,7 +54,6 @@ config.exampleDependencies.dependencies.forEach((dep) => {
   if (packageJson.dependencies && packageJson.dependencies[dep]) {
     delete packageJson.dependencies[dep];
     hasChanges = true;
-    console.log(`✅ Removed dependency: ${dep}`);
   }
 });
 
@@ -68,39 +62,20 @@ config.exampleDependencies.devDependencies.forEach((dep) => {
   if (packageJson.devDependencies && packageJson.devDependencies[dep]) {
     delete packageJson.devDependencies[dep];
     hasChanges = true;
-    console.log(`✅ Removed devDependency: ${dep}`);
   }
 });
 
 if (hasChanges) {
   fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n', 'utf-8');
-  console.log('\n✅ Updated package.json');
-  console.log('\n⚠️  Run "npm install" to update node_modules');
-} else {
-  console.log('\nℹ️  No dependency changes needed');
 }
 
 // Show manual steps for code cleanup
 if (config.codeReferencesToRemove) {
-  console.log('\n📋 Manual cleanup required:');
-  console.log('   The following code references should be removed manually:\n');
-
   Object.entries(config.codeReferencesToRemove).forEach(([filePath, references]) => {
-    console.log(`   📄 ${filePath}:`);
     references.forEach((ref) => {
       if (ref.import) {
         console.log(`      - Remove import: ${ref.import}`);
       }
-      if (ref.usage) {
-        console.log(`      - Remove usage: ${ref.usage}`);
-      }
     });
-    console.log('');
   });
-
-  console.log('   ⚠️  Removing these manually ensures your app continues to work correctly.');
 }
-
-console.log('\n✨ Production preparation complete!');
-console.log('📝 Example files are now ignored by git');
-console.log('💡 To restore examples, run: npm run prepare:development\n');

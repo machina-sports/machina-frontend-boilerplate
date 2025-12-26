@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { getReadmeContent } from '@/lib/readme';
 import DocsClient from './docs-client';
 import { CodeBlock } from '@/components/ui/code-block';
+import { DocsHeaderLogo } from '@/components/docs/docs-header-logo';
 
 import Link from 'next/link';
 
@@ -12,21 +13,13 @@ async function DocsPage() {
   return (
     <main className="flex min-h-screen flex-col items-start justify-start gap-8 bg-zinc-50 dark:bg-zinc-950">
       {/* Sticky Header */}
-      <div className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/80 shadow-sm backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/80">
-        <div className="mx-auto max-w-4xl px-6 py-4">
+      <div className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
+        <div className="mx-auto max-w-5xl px-6 py-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/">
-                <Image
-                  src="/machina-logo-dark.svg"
-                  alt="Machina Sports logo"
-                  width={0}
-                  height={0}
-                  sizes="100vw"
-                  className="h-8 w-auto md:h-10"
-                />
-              </Link>
-              <h1 className="text-xl font-bold tracking-tight text-zinc-900 md:text-2xl dark:text-zinc-50">
+            <div className="flex items-center gap-6">
+              <DocsHeaderLogo />
+              <div className="h-4 w-px bg-zinc-200 dark:bg-zinc-800" />
+              <h1 className="text-sm font-semibold tracking-tight text-zinc-900 md:text-base dark:text-zinc-50">
                 Documentation
               </h1>
             </div>
@@ -42,12 +35,12 @@ async function DocsPage() {
             components={{
               // Headings
               h1: ({ children }) => (
-                <h1 className="mt-12 mb-6 text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
+                <h1 className="mt-12 mb-6 text-4xl font-extrabold tracking-tighter text-zinc-900 dark:text-zinc-50">
                   {children}
                 </h1>
               ),
               h2: ({ children }) => (
-                <h2 className="mt-10 mb-5 border-b border-zinc-200 pb-3 text-3xl font-bold text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
+                <h2 className="mt-10 mb-5 border-b border-zinc-200 pb-3 text-2xl font-bold tracking-tight text-zinc-900 dark:border-zinc-800 dark:text-zinc-50">
                   {children}
                 </h2>
               ),
@@ -107,7 +100,7 @@ async function DocsPage() {
               a: ({ href, children }) => (
                 <a
                   href={href}
-                  className="font-medium text-blue-600 underline decoration-blue-300 underline-offset-4 transition-colors hover:text-blue-500 hover:decoration-blue-500 dark:text-blue-400 dark:decoration-blue-700/50 dark:hover:text-blue-300"
+                  className="inline-flex items-center gap-1 font-medium text-[#ff6d00] underline-offset-4 transition-colors hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -117,7 +110,7 @@ async function DocsPage() {
 
               // Blockquotes
               blockquote: ({ children }) => (
-                <blockquote className="my-6 rounded-r-lg border-l-4 border-blue-500 bg-blue-50/50 py-2 pl-6 text-zinc-700 italic dark:bg-blue-900/10 dark:text-zinc-300">
+                <blockquote className="my-6 rounded-r-xl border-l-4 border-[#ff6d00] bg-[#ff6d00]/5 py-2 pl-6 text-zinc-700 italic dark:text-zinc-300">
                   {children}
                 </blockquote>
               ),

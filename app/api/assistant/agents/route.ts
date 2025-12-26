@@ -17,8 +17,6 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    console.log('[Agent Search] Using API URL:', MACHINA_API_URL);
-
     // Forward request to Machina API with X-Api-Token header
     const response = await fetch(`${MACHINA_API_URL}/agent/search`, {
       method: 'POST',
@@ -31,7 +29,6 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Agent Search] Machina API error:', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -45,13 +42,12 @@ export async function POST(req: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('[Agent Search] Error proxying agent search:', error);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );
@@ -81,7 +77,6 @@ export async function GET(req: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Agent Get] Machina API error:', response.status, errorText);
 
       return NextResponse.json(
         {
@@ -95,13 +90,12 @@ export async function GET(req: NextRequest) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('[Agent Get] Error proxying agent get:', error);
-
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
         error: 'Internal server error',
-        message: error?.message || 'Unknown error',
+        message: errorMessage,
       },
       { status: 500 }
     );

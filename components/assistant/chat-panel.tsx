@@ -7,13 +7,12 @@ import { addUserMessage } from '@/providers/assistant/reducer';
 import { ChatMessage } from './chat-message';
 import { ChatInput } from './chat-input';
 import { Bot, AlertCircle } from 'lucide-react';
-import { sendMessage } from '@/providers/assistant/actions';
+import { sendMessage, sendVoiceMessage, streamAgentExecution } from '@/providers/assistant/actions';
 
 export function ChatPanel() {
   const dispatch = useAppDispatch();
-  const { messages, selectedWorkflow, workflowParameters, threadId, status, error } = useAppSelector(
-    (state) => state.assistant
-  );
+  const { messages, selectedWorkflow, workflowParameters, threadId, status, error } =
+    useAppSelector((state) => state.assistant);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -29,16 +28,28 @@ export function ChatPanel() {
       return;
     }
 
-    // Add user message to UI immediately
-    dispatch(addUserMessage(message));
-
     // Send to backend
     dispatch(
-      sendMessage({
+      streamAgentExecution({
         message,
-        workflowId: selectedWorkflow,
-        parameters: workflowParameters,
+        agentName: selectedWorkflow,
         threadId: threadId || undefined,
+        streamWorkflows: true,
+      })
+    );
+  };
+
+  const handleVoiceMessage = async (audioBlob: Blob) => {
+    if (!selectedWorkflow) {
+      return;
+    }
+
+    dispatch(
+      sendVoiceMessage({
+        audioBlob,
+        agentId: selectedWorkflow,
+        connectorId: 'google-storage-test-upload',
+        languageCode: 'pt-BR',
       })
     );
   };
@@ -50,13 +61,9 @@ export function ChatPanel() {
       {/* Header */}
       <div className="flex items-center gap-2 border-b border-zinc-200 p-4 dark:border-zinc-800">
         <Bot size={20} className="text-blue-500 dark:text-blue-400" />
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-          Chat Assistant
-        </h2>
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Chat Assistant</h2>
         {status === 'streaming' && (
-          <span className="ml-auto text-xs text-zinc-500 dark:text-zinc-400">
-            Typing...
-          </span>
+          <span className="ml-auto text-xs text-zinc-500 dark:text-zinc-400">Typing...</span>
         )}
       </div>
 
@@ -72,7 +79,10 @@ export function ChatPanel() {
                 </>
               ) : (
                 <>
-                  <AlertCircle size={48} className="mx-auto mb-4 text-zinc-300 dark:text-zinc-700" />
+                  <AlertCircle
+                    size={48}
+                    className="mx-auto mb-4 text-zinc-300 dark:text-zinc-700"
+                  />
                   <p>Select a workflow to begin</p>
                 </>
               )}
@@ -97,15 +107,13 @@ export function ChatPanel() {
       <div className="border-t border-zinc-200 p-4 dark:border-zinc-800">
         <ChatInput
           onSend={handleSendMessage}
+          onSendVoice={handleVoiceMessage}
           disabled={!canSend}
           placeholder={
-            selectedWorkflow
-              ? 'Type your message...'
-              : 'Select a workflow to start chatting'
+            selectedWorkflow ? 'Type your message...' : 'Select a workflow to start chatting'
           }
         />
       </div>
     </div>
   );
 }
-

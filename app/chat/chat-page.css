@@ -1,3 +1,8 @@
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(2); }
+}
+
 /* Animações suaves para transições */
 @keyframes slideInFromRight {
   from {
@@ -170,11 +175,24 @@
 
 /* Efeito de foco aprimorado */
 *:focus-visible {
-  outline: 2px solid rgb(59 130 246);
+  outline: 2px solid var(--brand-primary, rgb(59 130 246));
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 .dark *:focus-visible {
-  outline-color: rgb(96 165 250);
+  outline-color: var(--brand-primary, rgb(96 165 250));
+}
+
+/* Brand utilities */
+.text-brand-primary {
+  color: hsl(var(--brand-primary));
+}
+
+.bg-brand-primary {
+  background-color: hsl(var(--brand-primary));
+}
+
+.border-brand-primary {
+  border-color: hsl(var(--brand-primary));
 }

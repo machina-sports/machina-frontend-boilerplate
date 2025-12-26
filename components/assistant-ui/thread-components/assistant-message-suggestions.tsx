@@ -6,6 +6,11 @@ import { useShallow } from 'zustand/shallow';
 import { Button } from '@/components/ui/button';
 import type { FC } from 'react';
 
+interface CustomMetadata {
+  threadId?: string;
+  suggestions?: string[];
+}
+
 const AssistantMessageSuggestions: FC = () => {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
@@ -31,10 +36,9 @@ const AssistantMessageSuggestions: FC = () => {
       const isRunning = thread.isRunning;
 
       // Get threadId from message metadata or thread state
-      const threadId = (message.metadata?.custom as any)?.threadId as string | undefined;
-      const metadataSuggestions = (message.metadata?.custom as any)?.suggestions as
-        | string[]
-        | undefined;
+      const customMetadata = message.metadata?.custom as CustomMetadata | undefined;
+      const threadId = customMetadata?.threadId;
+      const metadataSuggestions = customMetadata?.suggestions;
 
       return { isLast, isAssistant, isRunning, threadId, metadataSuggestions };
     })

@@ -8,6 +8,7 @@ import type {
   AgentExecutionRequest,
   StreamMessage,
   AssistantObject,
+  SearchFilters,
 } from './types';
 
 class AssistantService extends ClientBaseService {
@@ -16,7 +17,7 @@ class AssistantService extends ClientBaseService {
   /**
    * Fetch available workflows from Machina API
    */
-  async getWorkflows(filters: Record<string, any> = {}): Promise<Workflow[]> {
+  async getWorkflows(filters: SearchFilters = {}): Promise<Workflow[]> {
     try {
       const searchRequest: SearchRequest = {
         filters,
@@ -40,7 +41,7 @@ class AssistantService extends ClientBaseService {
   /**
    * Fetch available agents from Machina API
    */
-  async getAgents(filters: Record<string, any> = {}): Promise<Agent[]> {
+  async getAgents(filters: SearchFilters = {}): Promise<Agent[]> {
     try {
       const searchRequest: SearchRequest = {
         filters,
@@ -78,6 +79,64 @@ class AssistantService extends ClientBaseService {
   async getAgentDetails(agentNameOrId: string): Promise<Agent> {
     const response = await this.get<{ data: Agent }>(this.prefix + `/agents/${agentNameOrId}`, {});
     return response.data;
+  }
+
+  /**
+   * Upload a file to a connector or via a workflow using FormData (No Base64)
+   */
+  async uploadFile(
+    workflowId: string,
+    file: Blob,
+    fieldName: string = 'file'
+  ): Promise<{ url: string; path: string }> {
+    const formData = new FormData();
+    formData.append(fieldName, file);
+    formData.append('workflowId', workflowId);
+
+    // Se o backend Machina suportar multipart/form-data diretamente:
+    const response = await fetch(`${this.prefix}/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Upload failed: ${errorText}`);
+    }
+
+    const result = await response.json();
+    return result.data?.outputs || result.data || result;
+  }
+
+  /**
+   * Execute a specific agent by ID or name (non-streaming)
+   */
+  async executeAgentRaw(agentId: string, inputs: Record<string, unknown>): Promise<unknown> {
+    const response = await this.post<unknown>(
+      { inputs },
+      `${this.prefix}/agent/execute/${agentId}`,
+      {}
+    );
+    return response;
+  }
+
+  /**
+   * Execute a specific workflow by ID or name
+   */
+  async executeWorkflow(
+    workflowId: string,
+    inputs: Record<string, unknown>
+  ): Promise<{
+    status: boolean | string;
+    message?: string;
+    data?: { outputs?: Record<string, unknown> };
+  }> {
+    const response = await this.post<{
+      status: boolean | string;
+      message?: string;
+      data?: { outputs?: Record<string, unknown> };
+    }>(inputs, `${this.prefix}/workflow/execute/${workflowId}`, {});
+    return response;
   }
 
   /**
