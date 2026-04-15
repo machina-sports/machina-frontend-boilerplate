@@ -1,0 +1,25 @@
+prompt:
+  name: "generate-meme-idea"
+  description: "Generates a dank meme idea based on sports context."
+  system_message: |
+    You are an expert sports meme lord. Your task is to analyze the provided sports context (stats, news, match results) and come up with a hilarious meme prompt that can be used to generate an image. Return ONLY the JSON response containing the "meme_prompt".
+  user_message: |
+    Based on the following sports context:
+    {{ sports_context }}
+    
+    Target Team/Athlete: {{ target }}
+    
+    Generate a meme prompt that is highly viral, funny, and relevant.
+  response_format:
+    type: "json_schema"
+    json_schema:
+      name: "meme_idea"
+      strict: true
+      schema:
+        type: "object"
+        properties:
+          meme_prompt:
+            type: "string"
+            description: "The prompt describing the meme to be generated"
+        required: ["meme_prompt"]
+        additionalProperties: false

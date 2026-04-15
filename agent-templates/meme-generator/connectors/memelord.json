@@ -1,0 +1,61 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MemeLord API",
+    "description": "API for generating dank sports memes.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://memelord.com/hackers"
+    }
+  ],
+  "paths": {
+    "/generate": {
+      "post": {
+        "summary": "Generate a meme",
+        "description": "Generate a meme image URL given some prompt text.",
+        "operationId": "generate-meme",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "prompt": {
+                    "type": "string"
+                  },
+                  "context": {
+                    "type": "string"
+                  }
+                },
+                "required": ["prompt"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful meme generation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "meme_url": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
