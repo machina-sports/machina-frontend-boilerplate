@@ -90,24 +90,24 @@ class AssistantService extends ClientBaseService {
    */
   async *streamAgent(params: {
     agentName: string;
-    messages: Array<{
+    messages?: Array<{
       role: 'user' | 'assistant' | 'system';
       content: string;
     }>;
     threadId?: string;
     streamWorkflows?: boolean;
+    contextAgent?: Record<string, any>;
   }): AsyncGenerator<StreamMessage, void, unknown> {
     // Build request
     const request: AgentExecutionRequest = {
-      messages: params.messages,
+      messages: params.messages || [],
       stream_workflows: params.streamWorkflows ?? true,
     };
 
-    if (params.threadId) {
-      request['context-agent'] = {
-        thread_id: params.threadId,
-      };
-    }
+    request['context-agent'] = {
+      ...(params.threadId ? { thread_id: params.threadId } : {}),
+      ...(params.contextAgent || {}),
+    };
 
     // Stream through proxy endpoint
     const streamPath = `${this.prefix}/stream/${params.agentName}`;
@@ -184,11 +184,12 @@ class AssistantService extends ClientBaseService {
    */
   async executeAgent(params: {
     agentName: string;
-    messages: Array<{
+    messages?: Array<{
       role: 'user' | 'assistant' | 'system';
       content: string;
     }>;
     threadId?: string;
+    contextAgent?: Record<string, any>;
   }): Promise<{ content: string; objects: AssistantObject[]; suggestions: string[] }> {
     const messages: StreamMessage[] = [];
 

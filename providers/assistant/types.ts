@@ -145,7 +145,7 @@ export interface SearchResponse<T> {
  * Agent execution request
  */
 export interface AgentExecutionRequest {
-  messages: Array<{
+  messages?: Array<{
     role: 'user' | 'assistant' | 'system';
     content: string | Array<{ type: string; text?: string; [key: string]: any }>;
   }>;
