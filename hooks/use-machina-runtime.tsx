@@ -10,7 +10,7 @@ export function useMachinaRuntime() {
 
   const adapter = useMemo(() => {
     return createMachinaStreamingAdapter({
-      agentName: selectedAgent || 'machina-assistant-executor',
+      agentName: selectedAgent || 'meme-agent',
       threadId: threadId || undefined,
       streamWorkflows: true,
     });
