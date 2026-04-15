@@ -1,0 +1,5 @@
+connector:
+  name: "memelord"
+  description: "MemeLord API for generating hackers-level memes."
+  filename: "memelord.json"
+  filetype: "restapi"

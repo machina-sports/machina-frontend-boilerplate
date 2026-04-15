@@ -1,0 +1,44 @@
+workflow:
+  name: meme-generator-workflow
+  title: Meme Generator Workflow
+  description: Generates a sports meme using sports-skills context and memelord connector
+  context-variables:
+    machina-ai:
+      api_key: "$TEMP_CONTEXT_VARIABLE_SDK_OPENAI_API_KEY"
+  inputs:
+    sports_context: "$.get('sports_context')"
+    target: "$.get('target')"
+  outputs:
+    workflow-status: "$.get('meme_url') is not None and 'executed' or 'skipped'"
+    meme_prompt: "$.get('meme_prompt')"
+    meme_url: "$.get('meme_url')"
+  tasks:
+    # Generate Meme Idea
+    - type: prompt
+      name: generate-meme-idea
+      description: Generates a funny meme prompt based on sports context
+      condition: "$.get('sports_context') is not None"
+      connector:
+        command: invoke_prompt
+        name: machina-ai
+        model: gpt-4o
+        provider: openai
+      inputs:
+        sports_context: $.get('sports_context')
+        target: $.get('target', 'General')
+      outputs:
+        meme_prompt: "$.get('meme_prompt')"
+
+    # Generate Meme Image via memelord
+    - type: connector
+      name: generate-meme-image
+      description: Calls Memelord connector to generate the actual meme image
+      condition: "$.get('meme_prompt') is not None"
+      connector:
+        name: memelord
+        command: generate-meme
+      inputs:
+        prompt: $.get('meme_prompt')
+        context: $.get('sports_context', '')
+      outputs:
+        meme_url: "$.get('meme_url')"

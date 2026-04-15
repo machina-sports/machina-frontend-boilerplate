@@ -1,0 +1,17 @@
+agent:
+  name: meme-agent
+  title: Meme Agent
+  description: "Agent to generate memes based on sports-skills context using Machina workflows and memelord."
+  context-agent:
+    sports_context: $.get('sports_context')
+    target: $.get('target')
+  workflows:
+    - name: meme-generator-workflow
+      description: "Generate meme based on sports context"
+      inputs:
+        sports_context: "$.get('sports_context')"
+        target: "$.get('target')"
+      outputs:
+        workflow-status: "$.get('workflow-status')"
+        meme_prompt: "$.get('meme_prompt')"
+        meme_url: "$.get('meme_url')"
