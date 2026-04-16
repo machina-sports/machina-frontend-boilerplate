@@ -1,0 +1,27 @@
+prompt:
+  name: meme-generator-prompt
+  title: Meme Generator Prompt
+  description: "Extract context from sports data to generate a meme prompt"
+  instructions: |
+    You are a creative sports meme generator.
+    Based on the sports context provided, come up with a brilliant, funny meme concept.
+    
+    SPORTS CONTEXT:
+    {{sports_context}}
+    
+    TEAM/PLAYER FOCUS:
+    {{focus_target}}
+    
+    Generate a detailed meme concept and context string that can be sent to our meme generator API.
+  schema:
+    title: "MemeConcept"
+    description: "The generated meme concept"
+    type: "object"
+    properties:
+      meme_context:
+        type: "string"
+        description: "The text to send to the meme generator describing the situation"
+      style:
+        type: "string"
+        description: "The meme style (e.g. 'drake-hotline-bling', 'distracted-boyfriend', 'pepe')"
+    required: ["meme_context", "style"]

@@ -1,0 +1,20 @@
+agent:
+  name: meme-agent
+  title: Meme Agent
+  description: "Agent to generate viral memes using sports-skills context and Memelord connector."
+  context-agent:
+    focus_target: "$.get('focus_target')"
+    sport_query: "$.get('sport_query', 'latest nfl news')"
+  workflows:
+
+    # meme-generator-generate
+    - name: meme-generator-generate
+      description: "Extract context and generate meme"
+      inputs:
+        focus_target: "$.get('focus_target')"
+        sport_query: "$.get('sport_query', 'latest nfl news')"
+      outputs:
+        workflow-status: "$.get('workflow-status')"
+        meme_url: "$.get('meme_url')"
+        caption: "$.get('caption')"
+        metadata: "$.get('metadata')"

@@ -1,0 +1,35 @@
+setup:
+  title: Meme Generator Agent
+  description: AI-powered meme generator that uses sports-skills to gather context and Memelord API to generate viral sports memes.
+  category:
+    - fan-engagement
+  estimatedTime: 30 seconds
+  features:
+    - AI Agent to generate viral memes
+    - Integrates sports-skills context
+    - Uses Memelord generation API
+  integrations:
+    - machina-ai
+    - sports-skills
+    - memelord
+  status: available
+  value: agent-templates/meme-generator-template
+  version: 1.0.0
+
+datasets:
+
+  # agent
+  - type: agent
+    path: agents/meme-agent.yml
+
+  # prompts
+  - type: prompt
+    path: prompts/generate-meme-prompt.yml
+
+  # connectors
+  - type: connector
+    path: connectors/memelord.yml
+
+  # workflows
+  - type: workflow
+    path: workflows/generate-meme.yml
