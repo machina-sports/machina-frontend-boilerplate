@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@theme {
+  --color-brand: #fe591f;
+  --color-brand-hover: #e04a16;
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-zinc-50 text-zinc-900;
+  }
+  .dark body {
+    @apply bg-zinc-950 text-zinc-50;
+  }
+}
