@@ -1,0 +1,64 @@
+workflow:
+  name: meme-generator-generate
+  title: Generate Meme
+  description: Workflow to extract context from sports-skills and generate a meme using Memelord
+  context-variables:
+    debugger:
+      enabled: true
+  inputs:
+    focus_target: "$.get('focus_target')"
+    sport_query: "$.get('sport_query', 'latest nfl news')"
+  outputs:
+    workflow-status: "$.get('meme_url') is not None and 'executed' or 'skipped'"
+    meme_url: "$.get('meme_url')"
+    caption: "$.get('caption')"
+    metadata: |
+      {
+        'focus_target': $.get('focus_target'),
+        'generated_at': datetime.now().isoformat(),
+        'version': '1.0.0'
+      }
+  tasks:
+
+    # get-sports-context
+    - type: "connector"
+      name: "get-sports-context"
+      description: "Get sports context from sports-skills"
+      connector:
+        name: "sports-skills"
+        command: "query"
+      inputs:
+        query: "$.get('sport_query')"
+      outputs:
+        sports_context: "$.get('data', 'Mock context: Tom Brady unretires again.')"
+
+    # meme-generator-prompt
+    - type: prompt
+      name: meme-generator-prompt
+      description: Extract meme concept from the sports context
+      condition: "$.get('sports_context') is not None"
+      connector:
+        name: machina-ai
+        command: invoke_prompt
+        model: gpt-4o
+      inputs:
+        sports_context: "$.get('sports_context')"
+        focus_target: "$.get('focus_target')"
+      outputs:
+        meme_context: "$.get('meme_context')"
+        style: "$.get('style')"
+
+    # memelord-connector
+    - type: connector
+      name: memelord-generate
+      description: "Generate meme using memelord connector"
+      condition: "$.get('meme_context') is not None"
+      connector:
+        name: "memelord"
+        command: "generateMeme"
+      inputs:
+        context: "$.get('meme_context')"
+        style: "$.get('style')"
+      outputs:
+        meme_url: "$.get('meme_url')"
+        caption: "$.get('caption')"

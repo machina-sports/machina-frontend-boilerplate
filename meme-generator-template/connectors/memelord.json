@@ -1,0 +1,71 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Memelord API",
+    "description": "API for memelord meme generation",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://memelord.com/hackers",
+      "description": "Memelord Hackers Server"
+    }
+  ],
+  "components": {
+    "schemas": {
+      "MemeRequest": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          }
+        },
+        "required": ["context"]
+      },
+      "MemeResponse": {
+        "type": "object",
+        "properties": {
+          "meme_url": {
+            "type": "string"
+          },
+          "caption": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/generate": {
+      "post": {
+        "summary": "Generate a meme",
+        "operationId": "generateMeme",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful generation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
