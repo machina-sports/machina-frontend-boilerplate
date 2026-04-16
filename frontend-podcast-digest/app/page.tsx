@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { Search, Loader2, FileText } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
+import { DigestResult } from '../components/DigestResult';
 
 export default function Page() {
   const [query, setQuery] = useState('');
@@ -92,17 +92,7 @@ export default function Page() {
         )}
       </form>
 
-      {digest && (
-        <div className="w-full mt-8 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 overflow-hidden shadow-sm">
-          <div className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/80 px-6 py-4 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-[#fe591f]" />
-            <h3 className="font-semibold text-lg">Your Digest</h3>
-          </div>
-          <div className="p-6 sm:p-8 prose prose-zinc dark:prose-invert max-w-none prose-headings:font-semibold prose-a:text-[#fe591f] prose-a:no-underline hover:prose-a:underline">
-            <ReactMarkdown>{digest}</ReactMarkdown>
-          </div>
-        </div>
-      )}
+      {digest && <DigestResult digest={digest} />}
     </div>
   );
 }
