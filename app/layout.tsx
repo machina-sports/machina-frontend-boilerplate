@@ -23,9 +23,15 @@ const geistMono = Geist_Mono({
 
 const brandId = process.env.NEXT_PUBLIC_BRAND ?? 'default';
 const brand = getBrandConfig(brandId);
-const { metadata, viewport } = generateBrandMetadata(brand);
+const { viewport } = generateBrandMetadata(brand);
 
-export { metadata, viewport };
+export const metadata = {
+  title: 'Corinthians Fan Engagement',
+  description:
+    'O ponto de encontro digital do Timão — estatísticas, jogos e conteúdo exclusivo para a Fiel Torcida do Sport Club Corinthians Paulista.',
+};
+
+export { viewport };
 
 export default function RootLayout({
   children,
