@@ -23,9 +23,18 @@ const geistMono = Geist_Mono({
 
 const brandId = process.env.NEXT_PUBLIC_BRAND ?? 'default';
 const brand = getBrandConfig(brandId);
-const { metadata, viewport } = generateBrandMetadata(brand);
+const { metadata: brandMetadata, viewport } = generateBrandMetadata(brand);
 
-export { metadata, viewport };
+export const metadata = {
+  ...brandMetadata,
+  title: 'Grêmio Live — powered by sports-skills',
+  openGraph: {
+    ...brandMetadata.openGraph,
+    title: 'Grêmio Live — powered by sports-skills',
+  },
+};
+
+export { viewport };
 
 export default function RootLayout({
   children,
