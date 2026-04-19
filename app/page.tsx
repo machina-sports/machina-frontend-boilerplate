@@ -1,162 +1,177 @@
 import type { ReactNode } from 'react';
 
 // ---------------------------------------------------------------------------
-// sports-skills API client (server-side)
+// Grêmio × sports-skills landing page
 // ---------------------------------------------------------------------------
-// sports-skills is primarily a Python/CLI package, but the factory task tells
-// us to assume an HTTP surface at sports-skills.machina.gg. We hit plausible
-// command paths under /football/<command> and degrade gracefully on failure.
-// Every fetch is isolated so a single failing endpoint never takes the page
-// down — the UI falls back to static copy and an "API unreachable" notice.
+// sports-skills (https://sports-skills.sh) is distributed as a CLI + Python
+// library, NOT an HTTP REST API. No fetchable endpoints are documented on the
+// public site — the landing page is static marketing. This page therefore
+// presents the skill catalog honestly: it shows the real command names that
+// power a Grêmio dashboard when the skill is installed and invoked locally
+// (or via an agent runtime). Any section that would require guessing an ID
+// or a non-existent endpoint has been dropped per brief.
+//
+// All CLI commands, parameter names and coverage notes below are taken from
+// the football-data skill's SKILL.md and references/api-reference.md.
 
-const API_BASE = 'https://sports-skills.machina.gg';
-const GREMIO_TEAM_ID = '6273'; // ESPN team id used across sports-skills
-const GREMIO_CREST = 'https://a.espncdn.com/i/teamlogos/soccer/500/6273.png';
-const COMPETITION_ID = 'serie-a-brazil';
+const SKILL_HOME = 'https://sports-skills.sh';
+const COMPETITION_ID = 'serie-a-brazil'; // documented league slug
+const TEAM_QUERY = 'Grêmio';             // resolve via search_team(query=...)
 
-type FetchState<T> = { ok: true; data: T } | { ok: false; error: string };
-
-async function skill<T>(path: string): Promise<FetchState<T>> {
-  try {
-    const res = await fetch(`${API_BASE}${path}`, {
-      next: { revalidate: 300 },
-      headers: { accept: 'application/json' },
-    });
-    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
-    const json = (await res.json()) as T;
-    return { ok: true, data: json };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : 'network error' };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-type MatchEvent = {
-  event_id?: string;
-  id?: string;
-  date?: string;
-  status?: string;
-  home_team?: string;
-  away_team?: string;
-  home_score?: number | null;
-  away_score?: number | null;
-  competition?: string;
-  venue?: string;
-};
-
-type StandingRow = {
-  position?: number;
-  team?: string;
-  team_id?: string;
-  played?: number;
-  won?: number;
-  drawn?: number;
-  lost?: number;
-  goals_for?: number;
-  goals_against?: number;
-  goal_difference?: number;
-  points?: number;
-};
-
-type Leader = {
-  player?: string;
-  team?: string;
-  goals?: number;
-  assists?: number;
-};
-
-// Loose extractor — the skill may wrap results in {data}, {result}, {events} etc.
-function pickArray<T>(raw: unknown, keys: string[]): T[] {
-  if (Array.isArray(raw)) return raw as T[];
-  if (raw && typeof raw === 'object') {
-    for (const k of keys) {
-      const v = (raw as Record<string, unknown>)[k];
-      if (Array.isArray(v)) return v as T[];
-    }
-  }
-  return [];
-}
-
-// ---------------------------------------------------------------------------
-// Data loaders
-// ---------------------------------------------------------------------------
-async function loadTeamSchedule() {
-  const res = await skill<unknown>(
-    `/football/get_team_schedule?team_id=${GREMIO_TEAM_ID}&competition_id=${COMPETITION_ID}`
-  );
-  if (!res.ok) return { ok: false as const, error: res.error };
-  const events = pickArray<MatchEvent>(res.data, ['events', 'matches', 'data', 'result']);
-  return { ok: true as const, events };
-}
-
-async function loadStandings() {
-  const res = await skill<unknown>(
-    `/football/get_season_standings?season_id=${COMPETITION_ID}-2025`
-  );
-  if (!res.ok) return { ok: false as const, error: res.error };
-  const rows = pickArray<StandingRow>(res.data, ['standings', 'table', 'data', 'result']);
-  return { ok: true as const, rows };
-}
-
-async function loadLeaders() {
-  const res = await skill<unknown>(
-    `/football/get_season_leaders?season_id=${COMPETITION_ID}-2025`
-  );
-  if (!res.ok) return { ok: false as const, error: res.error };
-  const leaders = pickArray<Leader>(res.data, ['leaders', 'top_scorers', 'data', 'result']);
-  return { ok: true as const, leaders };
-}
-
-// ---------------------------------------------------------------------------
-// Utils
-// ---------------------------------------------------------------------------
-function splitEvents(events: MatchEvent[]) {
-  const now = Date.now();
-  const past: MatchEvent[] = [];
-  const upcoming: MatchEvent[] = [];
-  for (const e of events) {
-    const t = e.date ? Date.parse(e.date) : NaN;
-    const played = e.home_score != null && e.away_score != null;
-    if (played || (!Number.isNaN(t) && t < now)) past.push(e);
-    else upcoming.push(e);
-  }
-  past.sort((a, b) => (Date.parse(b.date ?? '') || 0) - (Date.parse(a.date ?? '') || 0));
-  upcoming.sort((a, b) => (Date.parse(a.date ?? '') || 0) - (Date.parse(b.date ?? '') || 0));
-  return { past, upcoming };
-}
-
-function resultFor(e: MatchEvent): 'W' | 'D' | 'L' | null {
-  if (e.home_score == null || e.away_score == null) return null;
-  const isHome = /gr[êe]mio/i.test(e.home_team ?? '');
-  const gf = isHome ? e.home_score : e.away_score;
-  const ga = isHome ? e.away_score : e.home_score;
-  if (gf > ga) return 'W';
-  if (gf < ga) return 'L';
-  return 'D';
-}
-
-function fmtDate(iso?: string) {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-// ---------------------------------------------------------------------------
-// Presentational pieces
-// ---------------------------------------------------------------------------
 const GREMIO_BLUE = '#0D80BF';
 
+// ---------------------------------------------------------------------------
+// Skill command catalog — exactly as documented for football-data on Serie A Brazil
+// ---------------------------------------------------------------------------
+// Coverage notes come from the official "Data Coverage by League" table:
+//   - Works on all 13 leagues (incl. serie-a-brazil)
+//   - Top-5 only (Understat): xG endpoints
+//   - PL only (FPL): get_season_leaders, get_missing_players
+// Those PL-only/top-5-only commands are deliberately omitted below because
+// Grêmio plays in Serie A Brazil, where they return empty per the docs.
+
+type SkillCommand = {
+  name: string;
+  purpose: string;
+  params: string;
+  cli: string;
+  python: string;
+};
+
+const GREMIO_COMMANDS: SkillCommand[] = [
+  {
+    name: 'search_team',
+    purpose: 'Resolve o team_id do Grêmio antes de qualquer outra chamada.',
+    params: 'query, competition_id?',
+    cli: `sports-skills football search_team --query="${TEAM_QUERY}" --competition_id="${COMPETITION_ID}"`,
+    python: `football.search_team(query="${TEAM_QUERY}", competition_id="${COMPETITION_ID}")`,
+  },
+  {
+    name: 'get_current_season',
+    purpose: 'Descobre o season_id corrente do Brasileirão — nunca hardcode o ano.',
+    params: 'competition_id',
+    cli: `sports-skills football get_current_season --competition_id="${COMPETITION_ID}"`,
+    python: `football.get_current_season(competition_id="${COMPETITION_ID}")`,
+  },
+  {
+    name: 'get_team_schedule',
+    purpose: 'Jogos passados e futuros do Grêmio (precisa do team_id retornado por search_team).',
+    params: 'team_id, competition_id?, season_year?, league_slug?',
+    cli: `sports-skills football get_team_schedule --team_id="<espn_id>" --competition_id="${COMPETITION_ID}"`,
+    python: `football.get_team_schedule(team_id="<espn_id>", competition_id="${COMPETITION_ID}")`,
+  },
+  {
+    name: 'get_season_schedule',
+    purpose: 'Calendário completo da temporada Serie A Brazil.',
+    params: 'season_id',
+    cli: `sports-skills football get_season_schedule --season_id="${COMPETITION_ID}-2025"`,
+    python: `football.get_season_schedule(season_id="${COMPETITION_ID}-2025")`,
+  },
+  {
+    name: 'get_season_standings',
+    purpose: 'Tabela do Brasileirão (posição, V/E/D, saldo, pontos).',
+    params: 'season_id',
+    cli: `sports-skills football get_season_standings --season_id="${COMPETITION_ID}-2025"`,
+    python: `football.get_season_standings(season_id="${COMPETITION_ID}-2025")`,
+  },
+  {
+    name: 'get_season_teams',
+    purpose: 'Lista os clubes participantes da edição atual.',
+    params: 'season_id',
+    cli: `sports-skills football get_season_teams --season_id="${COMPETITION_ID}-2025"`,
+    python: `football.get_season_teams(season_id="${COMPETITION_ID}-2025")`,
+  },
+  {
+    name: 'get_daily_schedule',
+    purpose: 'Todos os jogos do dia (todas as ligas). Filtra Grêmio via competition_id/team_id.',
+    params: 'date?',
+    cli: `sports-skills football get_daily_schedule`,
+    python: `football.get_daily_schedule()`,
+  },
+  {
+    name: 'get_team_profile',
+    purpose: 'Dados básicos do Grêmio (nome, escudo, estádio). Não retorna elenco.',
+    params: 'team_id, league_slug?',
+    cli: `sports-skills football get_team_profile --team_id="<espn_id>" --league_slug="${COMPETITION_ID}"`,
+    python: `football.get_team_profile(team_id="<espn_id>", league_slug="${COMPETITION_ID}")`,
+  },
+  {
+    name: 'get_event_summary',
+    purpose: 'Resumo de partida específica com placar.',
+    params: 'event_id',
+    cli: `sports-skills football get_event_summary --event_id="<event_id>"`,
+    python: `football.get_event_summary(event_id="<event_id>")`,
+  },
+  {
+    name: 'get_event_lineups',
+    purpose: 'Escalações e formações da partida.',
+    params: 'event_id',
+    cli: `sports-skills football get_event_lineups --event_id="<event_id>"`,
+    python: `football.get_event_lineups(event_id="<event_id>")`,
+  },
+  {
+    name: 'get_event_statistics',
+    purpose: 'Estatísticas coletivas da partida (posse, finalizações, faltas, escanteios).',
+    params: 'event_id',
+    cli: `sports-skills football get_event_statistics --event_id="<event_id>"`,
+    python: `football.get_event_statistics(event_id="<event_id>")`,
+  },
+  {
+    name: 'get_event_timeline',
+    purpose: 'Timeline da partida — gols, cartões, substituições, VAR.',
+    params: 'event_id',
+    cli: `sports-skills football get_event_timeline --event_id="<event_id>"`,
+    python: `football.get_event_timeline(event_id="<event_id>")`,
+  },
+  {
+    name: 'get_event_players_statistics',
+    purpose: 'Estatísticas individuais dos jogadores na partida (sem xG fora do top-5).',
+    params: 'event_id',
+    cli: `sports-skills football get_event_players_statistics --event_id="<event_id>"`,
+    python: `football.get_event_players_statistics(event_id="<event_id>")`,
+  },
+  {
+    name: 'get_season_transfers',
+    purpose: 'Histórico de transferências (Transfermarkt) — requer tm_player_ids.',
+    params: 'season_id, tm_player_ids',
+    cli: `sports-skills football get_season_transfers --season_id="${COMPETITION_ID}-2025" --tm_player_ids="<id>,<id>"`,
+    python: `football.get_season_transfers(season_id="${COMPETITION_ID}-2025", tm_player_ids=["<id>", "<id>"])`,
+  },
+];
+
+// Commands explicitly NOT available for Serie A Brazil (per the coverage docs).
+const UNSUPPORTED_FOR_GREMIO: { name: string; reason: string }[] = [
+  {
+    name: 'get_season_leaders',
+    reason: 'Apenas Premier League (fonte: FPL). Retorna vazio para Serie A Brazil.',
+  },
+  {
+    name: 'get_missing_players',
+    reason: 'Apenas Premier League (fonte: FPL). Lesões/suspensões não expostas para o Brasileirão.',
+  },
+  {
+    name: 'get_event_xg',
+    reason: 'Apenas top-5 (EPL, La Liga, Bundesliga, Serie A, Ligue 1) via Understat.',
+  },
+  {
+    name: 'get_head_to_head',
+    reason: 'Marcado como UNAVAILABLE na skill — requer dados licenciados.',
+  },
+];
+
+// ---------------------------------------------------------------------------
+// Layout primitives
+// ---------------------------------------------------------------------------
 function Section({
   id,
   title,
+  subtitle,
   children,
   alt = false,
 }: {
   id: string;
   title: string;
+  subtitle?: string;
   children: ReactNode;
   alt?: boolean;
 }) {
@@ -167,13 +182,16 @@ function Section({
       style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-          <span
-            className="inline-block w-1 h-6 rounded-sm"
-            style={{ background: GREMIO_BLUE }}
-          />
-          {title}
-        </h2>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold flex items-center gap-3">
+            <span
+              className="inline-block w-1 h-6 rounded-sm"
+              style={{ background: GREMIO_BLUE }}
+            />
+            {title}
+          </h2>
+          {subtitle && <p className="text-sm text-gray-400 mt-2 ml-4">{subtitle}</p>}
+        </div>
         {children}
       </div>
     </section>
@@ -197,114 +215,72 @@ function Card({ children, glow = false }: { children: ReactNode; glow?: boolean 
   );
 }
 
-function ApiUnreachableCard({ endpoints }: { endpoints: string[] }) {
+function InfoCard({
+  tone = 'info',
+  title,
+  children,
+}: {
+  tone?: 'info' | 'warn';
+  title: string;
+  children: ReactNode;
+}) {
+  const accent = tone === 'warn' ? '#F59E0B' : GREMIO_BLUE;
+  const bg = tone === 'warn' ? 'rgba(245,158,11,0.15)' : 'rgba(13,128,191,0.15)';
   return (
     <Card>
       <div className="flex items-start gap-4">
         <div
           className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-          style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B' }}
+          style={{ background: bg, color: accent }}
         >
-          <span className="text-lg">!</span>
+          <span className="text-lg font-bold">{tone === 'warn' ? '!' : 'i'}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-white">{title}</p>
+          <div className="text-sm text-gray-400 mt-1 space-y-2">{children}</div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function CommandCard({ cmd }: { cmd: SkillCommand }) {
+  return (
+    <Card>
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div>
+          <p className="font-mono text-sm font-semibold" style={{ color: GREMIO_BLUE }}>
+            {cmd.name}
+          </p>
+          <p className="text-xs text-gray-500 mt-1 font-mono">params: {cmd.params}</p>
+        </div>
+        <span
+          className="text-[10px] font-bold px-2 py-1 rounded border"
+          style={{
+            color: GREMIO_BLUE,
+            borderColor: 'rgba(13,128,191,0.3)',
+            background: 'rgba(13,128,191,0.08)',
+          }}
+        >
+          FOOTBALL-DATA
+        </span>
+      </div>
+      <p className="text-sm text-gray-300 mb-4">{cmd.purpose}</p>
+      <div className="space-y-2">
+        <div>
+          <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">CLI</p>
+          <pre className="text-xs bg-black/40 border border-white/5 rounded-md p-3 overflow-x-auto font-mono text-gray-200">
+            <code>{cmd.cli}</code>
+          </pre>
         </div>
         <div>
-          <p className="font-semibold text-white">API unreachable</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Couldn&apos;t reach <code className="text-xs">{API_BASE}</code>. The page is
-            rendering with fallback copy; live data will return once the{' '}
-            <span style={{ color: GREMIO_BLUE }}>sports-skills</span> service is online.
-          </p>
-          {endpoints.length > 0 && (
-            <ul className="mt-3 text-xs text-gray-500 space-y-0.5">
-              {endpoints.map((e) => (
-                <li key={e}>
-                  <code>{e}</code>
-                </li>
-              ))}
-            </ul>
-          )}
+          <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Python</p>
+          <pre className="text-xs bg-black/40 border border-white/5 rounded-md p-3 overflow-x-auto font-mono text-gray-200">
+            <code>{cmd.python}</code>
+          </pre>
         </div>
       </div>
     </Card>
-  );
-}
-
-function NextMatchCard({ match }: { match: MatchEvent }) {
-  const isHome = /gr[êe]mio/i.test(match.home_team ?? '');
-  const opponent = isHome ? match.away_team : match.home_team;
-  return (
-    <Card glow>
-      <p className="text-xs uppercase tracking-widest text-gray-500 mb-4">
-        Próximo Jogo • {match.competition ?? 'Serie A Brazil'}
-      </p>
-      <div className="flex items-center justify-center gap-8 mb-6">
-        <div className="text-center">
-          <img src={GREMIO_CREST} alt="Grêmio" className="w-16 h-16 mx-auto mb-2" />
-          <p className="font-bold text-sm">Grêmio</p>
-          <p className="text-[10px] text-gray-500">{isHome ? 'MANDANTE' : 'VISITANTE'}</p>
-        </div>
-        <div className="text-center">
-          <span className="text-3xl text-gray-600 font-light">×</span>
-          <p className="text-xs text-gray-400 mt-3">{fmtDate(match.date)}</p>
-        </div>
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-2 rounded-full flex items-center justify-center bg-white/5 text-2xl font-black text-gray-400">
-            {opponent?.[0] ?? '?'}
-          </div>
-          <p className="font-bold text-sm">{opponent ?? 'Adversário'}</p>
-          <p className="text-[10px] text-gray-500">{isHome ? 'VISITANTE' : 'MANDANTE'}</p>
-        </div>
-      </div>
-      {match.venue && (
-        <p className="text-center text-xs text-gray-500">{match.venue}</p>
-      )}
-    </Card>
-  );
-}
-
-function ResultCard({ event }: { event: MatchEvent }) {
-  const r = resultFor(event);
-  const bg =
-    r === 'W'
-      ? 'rgba(16,185,129,0.15)'
-      : r === 'L'
-        ? 'rgba(239,68,68,0.15)'
-        : r === 'D'
-          ? 'rgba(245,158,11,0.15)'
-          : 'rgba(255,255,255,0.03)';
-  const label = r === 'W' ? 'VITÓRIA' : r === 'L' ? 'DERROTA' : r === 'D' ? 'EMPATE' : '—';
-  const labelColor =
-    r === 'W' ? '#10B981' : r === 'L' ? '#EF4444' : r === 'D' ? '#F59E0B' : '#9CA3AF';
-
-  return (
-    <div
-      className="rounded-xl p-4 border"
-      style={{
-        background: bg,
-        borderColor: 'rgba(255,255,255,0.05)',
-      }}
-    >
-      <div className="flex justify-between items-baseline mb-2">
-        <span className="text-[10px] uppercase tracking-wider text-gray-400">
-          {fmtDate(event.date)}
-        </span>
-        <span className="text-[10px] font-bold" style={{ color: labelColor }}>
-          {label}
-        </span>
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium truncate">{event.home_team ?? '—'}</span>
-        <span className="text-lg font-black tabular-nums">
-          {event.home_score ?? '-'}
-          <span className="text-gray-600 mx-1">×</span>
-          {event.away_score ?? '-'}
-        </span>
-        <span className="text-sm font-medium truncate text-right">{event.away_team ?? '—'}</span>
-      </div>
-      {event.competition && (
-        <p className="text-[10px] text-gray-500 mt-2">{event.competition}</p>
-      )}
-    </div>
   );
 }
 
@@ -313,24 +289,7 @@ function ResultCard({ event }: { event: MatchEvent }) {
 // ---------------------------------------------------------------------------
 export const revalidate = 300;
 
-export default async function GremioHomePage() {
-  const [schedule, standings, leaders] = await Promise.all([
-    loadTeamSchedule(),
-    loadStandings(),
-    loadLeaders(),
-  ]);
-
-  const allFailed = !schedule.ok && !standings.ok && !leaders.ok;
-
-  const events = schedule.ok ? schedule.events : [];
-  const { past, upcoming } = splitEvents(events);
-  const nextMatch = upcoming[0];
-  const recent = past.slice(0, 6);
-  const form = past.slice(0, 5).map(resultFor);
-
-  const topScorers = leaders.ok ? leaders.leaders.slice(0, 5) : [];
-  const standingsRows = standings.ok ? standings.rows.slice(0, 10) : [];
-
+export default function GremioHomePage() {
   return (
     <main
       className="min-h-screen text-white"
@@ -361,16 +320,19 @@ export default async function GremioHomePage() {
           </div>
           <div className="hidden md:flex items-center gap-6 text-sm text-gray-400">
             <a href="#overview" className="hover:text-white transition-colors">Overview</a>
-            <a href="#next" className="hover:text-white transition-colors">Próximo</a>
-            <a href="#results" className="hover:text-white transition-colors">Resultados</a>
-            <a href="#standings" className="hover:text-white transition-colors">Classificação</a>
-            <a href="#leaders" className="hover:text-white transition-colors">Artilharia</a>
+            <a href="#install" className="hover:text-white transition-colors">Instalação</a>
+            <a href="#commands" className="hover:text-white transition-colors">Comandos</a>
+            <a href="#coverage" className="hover:text-white transition-colors">Cobertura</a>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <span className="hidden sm:inline">powered by</span>
-            <span className="font-medium" style={{ color: GREMIO_BLUE }}>
+            <a
+              href={SKILL_HOME}
+              className="font-medium hover:underline"
+              style={{ color: GREMIO_BLUE }}
+            >
               sports-skills
-            </span>
+            </a>
           </div>
         </div>
       </nav>
@@ -391,11 +353,16 @@ export default async function GremioHomePage() {
           <div className="flex flex-col lg:flex-row items-center gap-10 lg:gap-16">
             <div className="flex-1 text-center lg:text-left">
               <div className="flex items-center gap-4 justify-center lg:justify-start mb-6">
-                <img
-                  src={GREMIO_CREST}
-                  alt="Grêmio"
-                  className="w-24 h-24 drop-shadow-2xl"
-                />
+                <div
+                  className="w-24 h-24 rounded-2xl flex items-center justify-center text-5xl font-black drop-shadow-2xl"
+                  style={{
+                    background: `linear-gradient(135deg, ${GREMIO_BLUE} 0%, #0A1628 100%)`,
+                    color: '#fff',
+                    border: `2px solid ${GREMIO_BLUE}`,
+                  }}
+                >
+                  G
+                </div>
                 <div>
                   <h1 className="text-4xl sm:text-5xl font-black tracking-tight">GRÊMIO</h1>
                   <p className="font-medium mt-1" style={{ color: GREMIO_BLUE }}>
@@ -403,13 +370,20 @@ export default async function GremioHomePage() {
                   </p>
                 </div>
               </div>
-              <p className="text-gray-400 text-lg max-w-xl">
-                Dashboard de inteligência esportiva em tempo real. Dados consumidos via a skill{' '}
+              <p className="text-gray-400 text-lg max-w-2xl">
+                Dashboard de inteligência para o Tricolor Gaúcho. Este painel documenta os{' '}
+                comandos da skill{' '}
                 <span style={{ color: GREMIO_BLUE }} className="font-semibold">
                   football-data
                 </span>{' '}
                 do pacote{' '}
-                <span className="text-white font-semibold">sports-skills</span>.
+                <a
+                  href={SKILL_HOME}
+                  className="text-white font-semibold hover:underline"
+                >
+                  sports-skills
+                </a>
+                {' '}disponíveis para o Brasileirão Serie A.
               </p>
               <div className="flex flex-wrap gap-3 mt-6 justify-center lg:justify-start">
                 <span
@@ -420,7 +394,7 @@ export default async function GremioHomePage() {
                     color: GREMIO_BLUE,
                   }}
                 >
-                  Serie A Brazil
+                  competition_id: {COMPETITION_ID}
                 </span>
                 <span className="px-3 py-1 rounded-full text-xs font-medium border border-white/10 text-gray-400 bg-white/5">
                   Arena do Grêmio
@@ -431,177 +405,146 @@ export default async function GremioHomePage() {
               </div>
             </div>
 
-            {/* Form chips */}
-            <div className="grid grid-cols-5 gap-2 min-w-[260px]">
-              <p className="col-span-5 text-xs uppercase tracking-widest text-gray-500 mb-1">
-                Últimos 5
-              </p>
-              {[0, 1, 2, 3, 4].map((i) => {
-                const r = form[i];
-                const bg =
-                  r === 'W'
-                    ? '#10B981'
-                    : r === 'L'
-                      ? '#EF4444'
-                      : r === 'D'
-                        ? '#F59E0B'
-                        : 'rgba(255,255,255,0.08)';
-                return (
-                  <div
-                    key={i}
-                    className="h-12 rounded-lg flex items-center justify-center text-sm font-black"
-                    style={{ background: bg }}
-                  >
-                    {r ?? '—'}
-                  </div>
-                );
-              })}
+            <div className="min-w-[280px] max-w-md w-full">
+              <InfoCard title="Como esta skill é consumida">
+                <p>
+                  <span className="font-semibold text-white">sports-skills</span> é distribuída como{' '}
+                  <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-white/5">
+                    CLI
+                  </span>{' '}
+                  e pacote{' '}
+                  <span className="font-mono text-xs px-1.5 py-0.5 rounded bg-white/5">
+                    Python
+                  </span>
+                  , não como REST API pública.
+                </p>
+                <p>
+                  O site <code className="text-xs">{SKILL_HOME}</code> serve apenas a
+                  documentação; as consultas abaixo rodam localmente ou dentro de um
+                  runtime de agente.
+                </p>
+              </InfoCard>
             </div>
           </div>
-
-          {allFailed && (
-            <div className="mt-10">
-              <ApiUnreachableCard
-                endpoints={[
-                  `GET ${API_BASE}/football/get_team_schedule`,
-                  `GET ${API_BASE}/football/get_season_standings`,
-                  `GET ${API_BASE}/football/get_season_leaders`,
-                ]}
-              />
-            </div>
-          )}
         </div>
       </section>
 
-      {/* Next match */}
-      <Section id="next" title="Próximo Jogo">
-        {schedule.ok && nextMatch ? (
-          <NextMatchCard match={nextMatch} />
-        ) : schedule.ok ? (
+      {/* Install */}
+      <Section
+        id="install"
+        title="Instalação"
+        subtitle="Dois caminhos oficiais, ambos documentados na homepage sports-skills.sh."
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
-            <p className="text-sm text-gray-400">
-              Nenhum jogo futuro encontrado na agenda da Serie A Brazil.
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">
+              via skills registry (agent-ready)
+            </p>
+            <pre className="text-xs bg-black/40 border border-white/5 rounded-md p-3 overflow-x-auto font-mono text-gray-200">
+              <code>npx skills add machina-sports/sports-skills@football-data</code>
+            </pre>
+            <p className="text-xs text-gray-500 mt-3">
+              Instala apenas a skill <code>football-data</code> para Claude Code, Cursor,
+              Copilot, Gemini CLI e agentes compatíveis com Agent Skills.
             </p>
           </Card>
-        ) : (
-          <ApiUnreachableCard endpoints={[`GET ${API_BASE}/football/get_team_schedule`]} />
-        )}
-      </Section>
-
-      {/* Recent results */}
-      <Section id="results" title="Resultados Recentes" alt>
-        {schedule.ok && recent.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recent.map((e, i) => (
-              <ResultCard key={e.event_id ?? e.id ?? i} event={e} />
-            ))}
-          </div>
-        ) : schedule.ok ? (
           <Card>
-            <p className="text-sm text-gray-400">Sem resultados recentes disponíveis.</p>
-          </Card>
-        ) : (
-          <ApiUnreachableCard endpoints={[`GET ${API_BASE}/football/get_team_schedule`]} />
-        )}
-      </Section>
-
-      {/* Standings */}
-      <Section id="standings" title="Classificação — Brasileirão">
-        {standings.ok && standingsRows.length > 0 ? (
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/5 text-gray-500 text-xs uppercase tracking-wider">
-                    <th className="text-left py-3 px-3 w-10">#</th>
-                    <th className="text-left py-3 px-2">Time</th>
-                    <th className="text-center py-3 px-2">J</th>
-                    <th className="text-center py-3 px-2">V</th>
-                    <th className="text-center py-3 px-2">E</th>
-                    <th className="text-center py-3 px-2">D</th>
-                    <th className="text-center py-3 px-2">SG</th>
-                    <th className="text-center py-3 px-2 font-bold text-white">PTS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {standingsRows.map((row, i) => {
-                    const isGremio = /gr[êe]mio/i.test(row.team ?? '');
-                    return (
-                      <tr
-                        key={row.team_id ?? row.team ?? i}
-                        className="border-b border-white/[0.03] hover:bg-white/[0.02]"
-                        style={
-                          isGremio
-                            ? {
-                                background: 'rgba(13,128,191,0.08)',
-                                borderLeft: `3px solid ${GREMIO_BLUE}`,
-                              }
-                            : undefined
-                        }
-                      >
-                        <td className="py-3 px-3 text-gray-400 font-mono">
-                          {row.position ?? i + 1}
-                        </td>
-                        <td className="py-3 px-2 font-medium">{row.team ?? '—'}</td>
-                        <td className="py-3 px-2 text-center text-gray-400">{row.played ?? '-'}</td>
-                        <td className="py-3 px-2 text-center text-gray-400">{row.won ?? '-'}</td>
-                        <td className="py-3 px-2 text-center text-gray-400">{row.drawn ?? '-'}</td>
-                        <td className="py-3 px-2 text-center text-gray-400">{row.lost ?? '-'}</td>
-                        <td className="py-3 px-2 text-center text-gray-400">
-                          {row.goal_difference ?? '-'}
-                        </td>
-                        <td className="py-3 px-2 text-center font-bold">{row.points ?? '-'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        ) : standings.ok ? (
-          <Card>
-            <p className="text-sm text-gray-400">Classificação indisponível no momento.</p>
-          </Card>
-        ) : (
-          <ApiUnreachableCard endpoints={[`GET ${API_BASE}/football/get_season_standings`]} />
-        )}
-      </Section>
-
-      {/* Leaders */}
-      <Section id="leaders" title="Artilharia" alt>
-        {leaders.ok && topScorers.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {topScorers.map((l, i) => (
-              <Card key={(l.player ?? '') + i}>
-                <div className="flex items-center gap-4">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-black"
-                    style={{ background: GREMIO_BLUE, color: '#050A14' }}
-                  >
-                    {i + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{l.player ?? '—'}</p>
-                    <p className="text-xs text-gray-500 truncate">{l.team ?? ''}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black tabular-nums">{l.goals ?? 0}</p>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wider">gols</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        ) : leaders.ok ? (
-          <Card>
-            <p className="text-sm text-gray-400">
-              Artilharia por temporada não está disponível para a Serie A Brazil nesta skill.
-              Consulte <code className="text-xs">get_event_players_statistics</code> por partida.
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-2">
+              via Python
+            </p>
+            <pre className="text-xs bg-black/40 border border-white/5 rounded-md p-3 overflow-x-auto font-mono text-gray-200">
+              <code>pip install sports-skills</code>
+            </pre>
+            <p className="text-xs text-gray-500 mt-3">
+              Requer Python 3.10+. Expõe o módulo <code>sports_skills.football</code> e o
+              binário <code>sports-skills</code>. Nenhuma chave de API é necessária.
             </p>
           </Card>
-        ) : (
-          <ApiUnreachableCard endpoints={[`GET ${API_BASE}/football/get_season_leaders`]} />
-        )}
+        </div>
+      </Section>
+
+      {/* Commands */}
+      <Section
+        id="commands"
+        title="Comandos disponíveis para o Grêmio"
+        subtitle="Fluxo recomendado: search_team → get_current_season → get_team_schedule / get_season_standings."
+        alt
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {GREMIO_COMMANDS.map((cmd) => (
+            <CommandCard key={cmd.name} cmd={cmd} />
+          ))}
+        </div>
+      </Section>
+
+      {/* Coverage caveats */}
+      <Section
+        id="coverage"
+        title="O que não está disponível para Serie A Brazil"
+        subtitle="A skill documenta explicitamente estas restrições de cobertura — omitimos da UI ao invés de fingir."
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {UNSUPPORTED_FOR_GREMIO.map((item) => (
+            <InfoCard key={item.name} tone="warn" title={item.name}>
+              <p>{item.reason}</p>
+            </InfoCard>
+          ))}
+        </div>
+      </Section>
+
+      {/* Workflow example */}
+      <Section
+        id="example"
+        title="Exemplo: deep-dive da última rodada"
+        subtitle="Sequência espelhada do Example 5 do SKILL.md (adaptada para o Grêmio)."
+        alt
+      >
+        <Card glow>
+          <ol className="space-y-4 text-sm">
+            <li>
+              <span className="font-mono text-xs text-gray-500">1.</span>{' '}
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                search_team(query=&quot;{TEAM_QUERY}&quot;)
+              </code>{' '}
+              <span className="text-gray-400">
+                → retorna team_id ESPN + competition_id=<code>{COMPETITION_ID}</code>.
+              </span>
+            </li>
+            <li>
+              <span className="font-mono text-xs text-gray-500">2.</span>{' '}
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                get_team_schedule(team_id=&quot;&lt;id&gt;&quot;, competition_id=&quot;{COMPETITION_ID}&quot;)
+              </code>{' '}
+              <span className="text-gray-400">→ escolhe a partida mais recente fechada.</span>
+            </li>
+            <li>
+              <span className="font-mono text-xs text-gray-500">3.</span>{' '}
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                get_event_summary(event_id)
+              </code>
+              <span className="text-gray-400"> + </span>
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                get_event_statistics(event_id)
+              </code>
+              <span className="text-gray-400"> + </span>
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                get_event_timeline(event_id)
+              </code>
+              <span className="text-gray-400">
+                {' '}→ placar, posse/finalizações, gols e cartões.
+              </span>
+            </li>
+            <li>
+              <span className="font-mono text-xs text-gray-500">4.</span>{' '}
+              <code className="font-mono" style={{ color: GREMIO_BLUE }}>
+                get_event_players_statistics(event_id)
+              </code>{' '}
+              <span className="text-gray-400">
+                → destaques individuais (xG indisponível fora do top-5).
+              </span>
+            </li>
+          </ol>
+        </Card>
       </Section>
 
       <footer className="py-10 border-t border-white/5">
@@ -609,14 +552,14 @@ export default async function GremioHomePage() {
           <span>
             Grêmio Live • dados via{' '}
             <a
-              href="https://sports-skills.sh"
+              href={SKILL_HOME}
               className="hover:text-white transition-colors"
               style={{ color: GREMIO_BLUE }}
             >
-              sports-skills
+              {SKILL_HOME}
             </a>
           </span>
-          <span>Atualizado a cada 5 minutos</span>
+          <span>sports-skills football-data • CLI / Python</span>
         </div>
       </footer>
     </main>
